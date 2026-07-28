@@ -1,0 +1,470 @@
+[
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\aci-pure-salt-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/aci-pure-salt-500-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Aci Pure Salt 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\arzish-ajwa-al-madina-dates-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/arzish-ajwa-al-madina-dates-500-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Arzish Ajwa Al Madina Dates 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\arzish-mariam-al-madina-dates-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/arzish-mariam-al-madina-dates-500-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Arzish Mariam Al Madina Dates 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\cadbury-dairy-milk-silk-plain-chocolate-bar-150-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/cadbury-dairy-milk-silk-plain-chocolate-bar-150-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Cadbury Dairy Milk Silk Plain Chocolate Bar 150 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\nestle-koko-krunch-chocolate-cereal-box-300-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/nestle-koko-krunch-chocolate-cereal-box-300-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Nestle Koko Krunch Chocolate Cereal Box 300 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\nestle-nescafe-classic-instant-coffee-jar-50-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/nestle-nescafe-classic-instant-coffee-jar-50-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Nestle Nescafe Classic Instant Coffee Jar 50 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\radhuni-chilli-morich-powder-200-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/radhuni-chilli-morich-powder-200-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Radhuni Chilli Morich Powder 200 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-01\\ruchi-tomato-ketchup-350-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-01/ruchi-tomato-ketchup-350-gm.webp",
+    "categorySlug": "snacks-sweets",
+    "name": "Ruchi Tomato Ketchup 350 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\fresh-paper-napkins-13-perfumed-100x1-ply-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/fresh-paper-napkins-13-perfumed-100x1-ply-1-pcs.webp",
+    "categorySlug": "household",
+    "name": "Fresh Paper Napkins 13 Perfumed 100x1 Ply 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\godrej-good-knight-turbo-powerlite-liquid-vaporizer-machine-refill-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/godrej-good-knight-turbo-powerlite-liquid-vaporizer-machine-refill-1-pcs.webp",
+    "categorySlug": "household",
+    "name": "Godrej Good Knight Turbo Powerlite Liquid Vaporizer Machine Refill 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\harpic-liquid-toilet-cleaner-750-ml-lizol-citrus-floor-cleaner-500-ml-free-mug-2-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/harpic-liquid-toilet-cleaner-750-ml-lizol-citrus-floor-cleaner-500-ml-free-mug-2-pcs.webp",
+    "categorySlug": "household",
+    "name": "Harpic Liquid Toilet Cleaner 750 Ml Lizol Citrus Floor Cleaner 500 Ml Free Mug 2 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\odonil-air-freshener-block-lavender-meadows-50-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/odonil-air-freshener-block-lavender-meadows-50-gm.webp",
+    "categorySlug": "household",
+    "name": "Odonil Air Freshener Block Lavender Meadows 50 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\rfl-double-paddle-bin-20-ltr-silver-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/rfl-double-paddle-bin-20-ltr-silver-1-pcs.webp",
+    "categorySlug": "household",
+    "name": "Rfl Double Paddle Bin 20 Ltr Silver 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\rin-washing-powder-power-bright-free-box-1-pcs-1-kg.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/rin-washing-powder-power-bright-free-box-1-pcs-1-kg.webp",
+    "categorySlug": "household",
+    "name": "Rin Washing Powder Power Bright Free Box 1 Pcs 1 Kg"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\vim-dishwashing-powder-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/vim-dishwashing-powder-500-gm.webp",
+    "categorySlug": "household",
+    "name": "Vim Dishwashing Powder 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-02\\yage-electronic-mosquito-swatter-white-blue-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-02/yage-electronic-mosquito-swatter-white-blue-1-pcs.webp",
+    "categorySlug": "household",
+    "name": "Yage Electronic Mosquito Swatter White Blue 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\colgate-total-advance-health-toothpaste-120-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/colgate-total-advance-health-toothpaste-120-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Colgate Total Advance Health Toothpaste 120 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\dettol-handwash-original-liquid-pump-200-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/dettol-handwash-original-liquid-pump-200-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Dettol Handwash Original Liquid Pump 200 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\dove-beauty-bar-white-135-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/dove-beauty-bar-white-135-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Dove Beauty Bar White 135 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\dove-shampoo-healthy-grow-free-dove-intense-repair-conditioner-50-ml-340-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/dove-shampoo-healthy-grow-free-dove-intense-repair-conditioner-50-ml-340-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Dove Shampoo Healthy Grow Free Dove Intense Repair Conditioner 50 Ml 340 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\fresh-perfumed-facial-tissue-150-x-2-ply-box-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/fresh-perfumed-facial-tissue-150-x-2-ply-box-1-pcs.webp",
+    "categorySlug": "health-beauty",
+    "name": "Fresh Perfumed Facial Tissue 150 X 2 Ply Box 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\studio-x-clean-strong-shampoo-for-men-free-face-wash-50-ml-355-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/studio-x-clean-strong-shampoo-for-men-free-face-wash-50-ml-355-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Studio X Clean Strong Shampoo For Men Free Face Wash 50 Ml 355 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\vaseline-blueseal-cocoa-butter-jelly-250-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/vaseline-blueseal-cocoa-butter-jelly-250-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Vaseline Blueseal Cocoa Butter Jelly 250 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-03\\white-tone-face-powder-50-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-03/white-tone-face-powder-50-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "White Tone Face Powder 50 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\aarong-dairy-sour-curd-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/aarong-dairy-sour-curd-500-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Aarong Dairy Sour Curd 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\aci-savlon-liquid-antiseptic-500-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/aci-savlon-liquid-antiseptic-500-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Aci Savlon Liquid Antiseptic 500 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\colgate-plax-peppermint-mouth-wash-750-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/colgate-plax-peppermint-mouth-wash-750-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Colgate Plax Peppermint Mouth Wash 750 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\dabur-chyawanprash-awaleha-500-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/dabur-chyawanprash-awaleha-500-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Dabur Chyawanprash Awaleha 500 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\oxyclean-multipurpose-spray-400-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/oxyclean-multipurpose-spray-400-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Oxyclean Multipurpose Spray 400 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\safe-accu-blood-glucose-monitor-device-kit-free-sir-750-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/safe-accu-blood-glucose-monitor-device-kit-free-sir-750-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Safe Accu Blood Glucose Monitor Device Kit Free Sir 750 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\sepnil-face-mask-1-box-50-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/sepnil-face-mask-1-box-50-pcs.webp",
+    "categorySlug": "health-beauty",
+    "name": "Sepnil Face Mask 1 Box 50 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\standard-horlicks-health-and-nutrition-drink-jar-1000-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/standard-horlicks-health-and-nutrition-drink-jar-1000-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Standard Horlicks Health And Nutrition Drink Jar 1000 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-04\\womens-plus-horlicks-health-and-nutrition-drink-jar-400-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-04/womens-plus-horlicks-health-and-nutrition-drink-jar-400-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Womens Plus Horlicks Health And Nutrition Drink Jar 400 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\avonee-pants-minis4-8-kg60pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/avonee-pants-minis4-8-kg60pcs.webp",
+    "categorySlug": "baby-care",
+    "name": "Avonee Pants Minis4 8 Kg60pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\biomil-4-follow-up-milk-powder-tin-2-3-years-400-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/biomil-4-follow-up-milk-powder-tin-2-3-years-400-gm.webp",
+    "categorySlug": "baby-care",
+    "name": "Biomil 4 Follow Up Milk Powder Tin 2 3 Years 400 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\comfort-baby-wet-wipes-yellow-jar-170-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/comfort-baby-wet-wipes-yellow-jar-170-pcs.webp",
+    "categorySlug": "baby-care",
+    "name": "Comfort Baby Wet Wipes Yellow Jar 170 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\himalaya-fairness-kesar-face-wash-50-ml-prickly-heat-baby-powder-50-gm-combo-pack.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/himalaya-fairness-kesar-face-wash-50-ml-prickly-heat-baby-powder-50-gm-combo-pack.webp",
+    "categorySlug": "baby-care",
+    "name": "Himalaya Fairness Kesar Face Wash 50 Ml Prickly Heat Baby Powder 50 Gm Combo Pack"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\johnsons-baby-powder-380-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/johnsons-baby-powder-380-gm.webp",
+    "categorySlug": "baby-care",
+    "name": "Johnsons Baby Powder 380 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\nestle-nido-3-growing-up-milk-powder-3-5-y-350-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/nestle-nido-3-growing-up-milk-powder-3-5-y-350-gm.webp",
+    "categorySlug": "baby-care",
+    "name": "Nestle Nido 3 Growing Up Milk Powder 3 5 Y 350 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\prodentalb-baby-toothpaste-strawberry-40-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/prodentalb-baby-toothpaste-strawberry-40-gm.webp",
+    "categorySlug": "baby-care",
+    "name": "Prodentalb Baby Toothpaste Strawberry 40 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-05\\smartcare-borosilicate-pink-glass-bottle-s-0-months-60-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-05/smartcare-borosilicate-pink-glass-bottle-s-0-months-60-ml.webp",
+    "categorySlug": "baby-care",
+    "name": "Smartcare Borosilicate Pink Glass Bottle S 0 Months 60 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\angel-bear-toothbrush-holder-cream-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/angel-bear-toothbrush-holder-cream-1-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Angel Bear Toothbrush Holder Cream 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\npoly-printed-mini-container-set-4-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/npoly-printed-mini-container-set-4-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Npoly Printed Mini Container Set 4 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\partex-cleen-kitchen-towel-roll-2-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/partex-cleen-kitchen-towel-roll-2-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Partex Cleen Kitchen Towel Roll 2 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\philips-stellar-bright-led-light-white-20-watt-screw-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/philips-stellar-bright-led-light-white-20-watt-screw-1-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Philips Stellar Bright Led Light White 20 Watt Screw 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\rfl-family-basket-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/rfl-family-basket-1-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Rfl Family Basket 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\rfl-tel-vertical-gardening-flower-tub-set-rose-wood-3-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/rfl-tel-vertical-gardening-flower-tub-set-rose-wood-3-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Rfl Tel Vertical Gardening Flower Tub Set Rose Wood 3 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\rfl-topper-non-stick-glamour-pan-with-lid-26-cm-red-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/rfl-topper-non-stick-glamour-pan-with-lid-26-cm-red-1-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Rfl Topper Non Stick Glamour Pan With Lid 26 Cm Red 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-06\\round-shape-cake-mould-free-measuring-set-3-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-06/round-shape-cake-mould-free-measuring-set-3-pcs.webp",
+    "categorySlug": "home-kitchen",
+    "name": "Round Shape Cake Mould Free Measuring Set 3 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\casio-scientific-calculator-fx-991es-plus-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/casio-scientific-calculator-fx-991es-plus-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Casio Scientific Calculator Fx 991es Plus 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\deli-3-tier-file-tray-9215-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/deli-3-tier-file-tray-9215-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Deli 3 Tier File Tray 9215 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\deli-auto-numbering-machine-6-digits.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/deli-auto-numbering-machine-6-digits.webp",
+    "categorySlug": "stationery",
+    "name": "Deli Auto Numbering Machine 6 Digits"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\deli-colored-push-pins-100-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/deli-colored-push-pins-100-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Deli Colored Push Pins 100 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\deli-pen-holder-round-shape-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/deli-pen-holder-round-shape-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Deli Pen Holder Round Shape 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\double-a-a4-size-paper-80-gsm-1-rim.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/double-a-a4-size-paper-80-gsm-1-rim.webp",
+    "categorySlug": "stationery",
+    "name": "Double A A4 Size Paper 80 Gsm 1 Rim"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\fevicol-super-glue-3-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/fevicol-super-glue-3-gm.webp",
+    "categorySlug": "stationery",
+    "name": "Fevicol Super Glue 3 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\horse-stamp-pad-no-3-orchid-blue-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/horse-stamp-pad-no-3-orchid-blue-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Horse Stamp Pad No 3 Orchid Blue 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\kangaro-punch-machine-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/kangaro-punch-machine-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Kangaro Punch Machine 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\max-geometry-box-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/max-geometry-box-1-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Max Geometry Box 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\sony-aa-alkaline-batteries-2-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/sony-aa-alkaline-batteries-2-pcs.webp",
+    "categorySlug": "stationery",
+    "name": "Sony Aa Alkaline Batteries 2 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-07\\titi-artists-oil-pastel-12-color-1-pack.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-07/titi-artists-oil-pastel-12-color-1-pack.webp",
+    "categorySlug": "stationery",
+    "name": "Titi Artists Oil Pastel 12 Color 1 Pack"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\groome-makeup-blender-sponge-pink-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/groome-makeup-blender-sponge-pink-1-pcs.webp",
+    "categorySlug": "health-beauty",
+    "name": "Groome Makeup Blender Sponge Pink 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\lafz-lip-color-wild-berry-55-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/lafz-lip-color-wild-berry-55-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Lafz Lip Color Wild Berry 55 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\lafz-nail-polish-evening-sand-11-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/lafz-nail-polish-evening-sand-11-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Lafz Nail Polish Evening Sand 11 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\lipsilk-lip-balm-strawberry-7-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/lipsilk-lip-balm-strawberry-7-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Lipsilk Lip Balm Strawberry 7 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\pierre-cardin-automatic-eyeliner-waterproof-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/pierre-cardin-automatic-eyeliner-waterproof-1-pcs.webp",
+    "categorySlug": "health-beauty",
+    "name": "Pierre Cardin Automatic Eyeliner Waterproof 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\pierre-cardin-natural-look-foundation-30-ml.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/pierre-cardin-natural-look-foundation-30-ml.webp",
+    "categorySlug": "health-beauty",
+    "name": "Pierre Cardin Natural Look Foundation 30 Ml"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\pierre-cardin-porcelain-edition-compact-powder-12-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/pierre-cardin-porcelain-edition-compact-powder-12-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Pierre Cardin Porcelain Edition Compact Powder 12 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-08\\rajkonna-multani-mati-80-gm.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-08/rajkonna-multani-mati-80-gm.webp",
+    "categorySlug": "health-beauty",
+    "name": "Rajkonna Multani Mati 80 Gm"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\baby-dress-set-13-pcs-gift-box-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/baby-dress-set-13-pcs-gift-box-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Baby Dress Set 13 Pcs Gift Box 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\baby-pillow-set-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/baby-pillow-set-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Baby Pillow Set 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\double-part-4-in-1-inflatable-travelling-pillow-set-green-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/double-part-4-in-1-inflatable-travelling-pillow-set-green-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Double Part 4 In 1 Inflatable Travelling Pillow Set Green 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\livingtex-baby-romper-pack-6-9-month-6-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/livingtex-baby-romper-pack-6-9-month-6-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Livingtex Baby Romper Pack 6 9 Month 6 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\livingtex-bath-soft-towel-pink-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/livingtex-bath-soft-towel-pink-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Livingtex Bath Soft Towel Pink 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\livingtex-cushion-18-x-18-inch-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/livingtex-cushion-18-x-18-inch-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Livingtex Cushion 18 X 18 Inch 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\livingtex-wash-towel-12-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/livingtex-wash-towel-12-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Livingtex Wash Towel 12 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\nomad-ladies-bag-blue-pro-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/nomad-ladies-bag-blue-pro-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Nomad Ladies Bag Blue Pro 1 Pcs"
+  },
+  {
+    "localPath": "D:\\Rasel Mahmud Shanto\\femcart-platform\\femcart-web\\public\\assets\\products\\cat-09\\tasbih-black-1-pcs.webp",
+    "s3Url": "https://ragory-ecommerce-assets-188620291913-eu-north-1-an.s3.eu-north-1.amazonaws.com/products/cat-09/tasbih-black-1-pcs.webp",
+    "categorySlug": "home-lifestyle",
+    "name": "Tasbih Black 1 Pcs"
+  }
+]
