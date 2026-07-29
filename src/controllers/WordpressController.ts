@@ -157,25 +157,31 @@ export class WordPressController extends BaseController {
     });
   });
 
-  /** Generate Tasks for All Products */
-  generateTasks = asyncHandler(async (_req: Request, res: Response) => {
+  /** Generate Tasks for All Products or Orders */
+  generateTasks = asyncHandler(async (req: Request, res: Response) => {
     const setting = await getActiveSetting();
     if (!setting) {
       res.status(400).json({ success: false, message: 'No WordPress settings configured' });
       return;
     }
     
-    // Fetch total products to calculate batches
+    const entityType = (req.body.entityType || req.query.entityType || 'PRODUCTS') as string;
+
+    // Fetch total count to calculate batches
     let total = 0;
     try {
-      total = await wordPressService.getTotalProductCount(setting);
+      if (entityType === 'ORDERS') {
+        total = await wordPressService.getTotalOrderCount(setting);
+      } else {
+        total = await wordPressService.getTotalProductCount(setting);
+      }
     } catch (err: any) {
-      res.status(400).json({ success: false, message: err.message || 'Failed to fetch products from WordPress' });
+      res.status(400).json({ success: false, message: err.message || `Failed to fetch ${entityType} from WordPress` });
       return;
     }
 
     if (total === 0) {
-      res.status(400).json({ success: false, message: 'No products found on WordPress' });
+      res.status(400).json({ success: false, message: `No ${entityType} found on WordPress` });
       return;
     }
 
@@ -189,7 +195,7 @@ export class WordPressController extends BaseController {
       const itemsInThisBatch = Math.min(perPage, remainingItems);
 
       taskData.push({
-        name: `Batch ${i} (Products ${(i - 1) * perPage + 1} - ${(i - 1) * perPage + itemsInThisBatch})`,
+        name: `Batch ${i} (${entityType} ${(i - 1) * perPage + 1} - ${(i - 1) * perPage + itemsInThisBatch})`,
         status: 'pending' as const,
         pageNumber: i,
         perPage,
@@ -197,6 +203,7 @@ export class WordPressController extends BaseController {
         imported: 0,
         failed: 0,
         details: '[]',
+        entityType,
       });
     }
 

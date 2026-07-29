@@ -107,6 +107,7 @@ export async function importProduct(
   wcProduct: WCProduct,
   setting: WCSetting,
   catMap: Map<number, string>,
+  imageStorageStrategy: 'LOCAL' | 'DIRECT_LINK' | 'AWS_S3' = 'AWS_S3',
   logFn?: (msg: string) => void
 ): Promise<'created' | 'updated' | 'skipped'> {
   const externalId = `wc_${wcProduct.id}`;
@@ -122,14 +123,18 @@ export async function importProduct(
   let mainImage: string | undefined;
   const mainImgSrc = wcProduct.images?.[0]?.src;
   if (mainImgSrc) {
-    try { 
-      logFn && logFn(`  🖼️ Downloading main image...`);
-      const res = await downloadAndSaveImage(mainImgSrc, wcProduct.images[0].alt || wcProduct.name); 
-      mainImage = res.startsWith('http') ? res : `${config.apiUrl}${res}`;
-      logFn && logFn(`  ✔️ Main image saved.`);
-    } catch (e: any) { 
-      console.error('Main image fail:', e.message);
-      logFn && logFn(`  ❌ Main image download failed: ${e.message}`);
+    if (imageStorageStrategy === 'DIRECT_LINK') {
+      mainImage = mainImgSrc;
+    } else {
+      try { 
+        logFn && logFn(`  🖼️ Downloading main image...`);
+        const res = await downloadAndSaveImage(mainImgSrc, wcProduct.images[0].alt || wcProduct.name, imageStorageStrategy); 
+        mainImage = res.startsWith('http') || res.startsWith('/') ? res : `${config.apiUrl}${res}`;
+        logFn && logFn(`  ✔️ Main image saved.`);
+      } catch (e: any) { 
+        console.error('Main image fail:', e.message);
+        logFn && logFn(`  ❌ Main image download failed: ${e.message}`);
+      }
     }
   }
 
@@ -137,17 +142,28 @@ export async function importProduct(
   const galleryImages: string[] = [];
   const extraImages = (wcProduct.images ?? []).slice(1);
   if (extraImages.length > 0) {
-    logFn && logFn(`  🖼️ Downloading ${extraImages.length} gallery images...`);
-    for (const img of extraImages) {
-      try {
-        const saved = await downloadAndSaveImage(img.src, img.alt || wcProduct.name);
-        galleryImages.push(saved.startsWith('http') ? saved : `${config.apiUrl}${saved}`);
-      } catch (e: any) { 
-        console.error('Gallery image fail:', e.message); 
-        logFn && logFn(`  ❌ Gallery image failed: ${e.message}`);
+    logFn && logFn(`  🖼️ Downloading ${extraImages.length} gallery images in parallel...`);
+    
+    if (imageStorageStrategy === 'DIRECT_LINK') {
+      for (const img of extraImages) {
+        galleryImages.push(img.src);
       }
+    } else {
+      const promises = extraImages.map(img => 
+        downloadAndSaveImage(img.src, img.alt || wcProduct.name, imageStorageStrategy)
+      );
+      
+      const results = await Promise.allSettled(promises);
+      results.forEach((res, idx) => {
+        if (res.status === 'fulfilled') {
+          galleryImages.push(res.value.startsWith('http') || res.value.startsWith('/') ? res.value : `${config.apiUrl}${res.value}`);
+        } else {
+          console.error('Gallery image fail:', res.reason.message);
+          logFn && logFn(`  ❌ Gallery image ${idx + 1} failed: ${res.reason.message}`);
+        }
+      });
     }
-    logFn && logFn(`  ✔️ Gallery images saved.`);
+    logFn && logFn(`  ✔️ Gallery images processed.`);
   }
 
   // ── Categories ──
@@ -189,11 +205,25 @@ export async function importProduct(
   }
   const finalSeoData = Object.keys(seoData).length > 0 ? seoData : null;
 
+  // ── Tags ──
+  const tagNames = (wcProduct.tags ?? []).map(t => t.name).filter(Boolean);
+  const tagConnections = [];
+  for (const tName of tagNames) {
+    const tSlug = slugify(tName);
+    const tag = await prisma.tag.upsert({
+      where: { slug: tSlug },
+      update: {},
+      create: { name: tName, slug: tSlug }
+    });
+    tagConnections.push({ id: tag.id });
+  }
+
   // ── Product data preparation ──
   const productData: any = {
     externalId,
     name: wcProduct.name,
     slug,
+    sku: wcProduct.sku || null,
     productType: productType as any,
     description: wcProduct.description ?? '',
     shortDescription: wcProduct.short_description ?? '',
@@ -201,6 +231,19 @@ export async function importProduct(
     specialPrice: specialPrice ?? null,
     stock: wcProduct.stock_quantity ?? 0,
     weight: wcProduct.weight || null,
+    length: wcProduct.dimensions?.length || null,
+    width: wcProduct.dimensions?.width || null,
+    height: wcProduct.dimensions?.height || null,
+    taxStatus: wcProduct.tax_status || null,
+    taxClass: wcProduct.tax_class || null,
+    shippingClass: wcProduct.shipping_class || null,
+    manageStock: wcProduct.manage_stock ?? false,
+    backorders: wcProduct.backorders || null,
+    soldIndividually: wcProduct.sold_individually ?? false,
+    isVirtual: wcProduct.virtual ?? false,
+    isDownloadable: wcProduct.downloadable ?? false,
+    upsellProducts: wcProduct.upsell_ids?.length ? JSON.stringify(wcProduct.upsell_ids) : null,
+    downsellProducts: wcProduct.cross_sell_ids?.length ? JSON.stringify(wcProduct.cross_sell_ids) : null,
     brandId: brandId ?? null,
     seoData: finalSeoData ? JSON.stringify(finalSeoData) : null,
     averageRating: parseFloat(wcProduct.average_rating || '0'),
@@ -219,11 +262,13 @@ export async function importProduct(
       ...productData,
       image: mainImage ?? undefined,
       categories: { set: categoryConnections },
+      tags: { set: tagConnections },
     },
     create: {
       ...productData,
       image: mainImage ?? null,
       categories: { connect: categoryConnections },
+      tags: { connect: tagConnections },
     },
     include: { categories: true, brand: true, variants: true }
   });
@@ -272,16 +317,20 @@ export async function importProduct(
 
         let vImage: string | undefined;
         if (v.image?.src) {
-          try { 
-            const res = await downloadAndSaveImage(v.image.src, v.image.alt || wcProduct.name); 
-            vImage = res.startsWith('http') ? res : `${config.apiUrl}${res}`;
-          } catch (e: any) { console.error('Variant image fail:', e.message); }
+          if (imageStorageStrategy === 'DIRECT_LINK') {
+            vImage = v.image.src;
+          } else {
+            try { 
+              const res = await downloadAndSaveImage(v.image.src, v.image.alt || wcProduct.name, imageStorageStrategy); 
+              vImage = res.startsWith('http') || res.startsWith('/') ? res : `${config.apiUrl}${res}`;
+            } catch (e: any) { console.error('Variant image fail:', e.message); }
+          }
         }
 
-        // Check if variant exists (by sku or externalId stored in sku field)
+        // Check if variant exists (by externalId)
         const extVarId = `wc_var_${v.id}`;
-        const existingVar = await prisma.productVariant.findFirst({
-          where: { productId: product.id, sku: extVarId },
+        const existingVar = await prisma.productVariant.findUnique({
+          where: { externalId: extVarId },
         });
 
         const attrData = (v.attributes ?? []).map((a) => ({ name: a.name, value: a.option }));
@@ -290,10 +339,21 @@ export async function importProduct(
           await prisma.productVariant.update({
             where: { id: existingVar.id },
             data: {
+              sku: v.sku || null,
               price: vPrice,
               specialPrice: vSpecial ?? null,
               stock: v.stock_quantity ?? 0,
               image: vImage ?? null,
+              length: v.dimensions?.length || null,
+              width: v.dimensions?.width || null,
+              height: v.dimensions?.height || null,
+              weight: v.weight || null,
+              taxClass: v.tax_class || null,
+              shippingClass: v.shipping_class || null,
+              manageStock: v.manage_stock ?? false,
+              backorders: v.backorders || null,
+              isVirtual: v.virtual ?? false,
+              isDownloadable: v.downloadable ?? false,
               attributes: {
                 deleteMany: {},
                 create: attrData,
@@ -304,11 +364,22 @@ export async function importProduct(
           await prisma.productVariant.create({
             data: {
               productId: product.id,
-              sku: extVarId,
+              externalId: extVarId,
+              sku: v.sku || null,
               price: vPrice,
               specialPrice: vSpecial ?? null,
               stock: v.stock_quantity ?? 0,
               image: vImage ?? null,
+              length: v.dimensions?.length || null,
+              width: v.dimensions?.width || null,
+              height: v.dimensions?.height || null,
+              weight: v.weight || null,
+              taxClass: v.tax_class || null,
+              shippingClass: v.shipping_class || null,
+              manageStock: v.manage_stock ?? false,
+              backorders: v.backorders || null,
+              isVirtual: v.virtual ?? false,
+              isDownloadable: v.downloadable ?? false,
               isDefault: false,
               enabled: true,
               attributes: { create: attrData },

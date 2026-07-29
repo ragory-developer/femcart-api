@@ -50,6 +50,7 @@ export class PageController extends BaseController {
 
   getBySlug = asyncHandler(async (req: Request, res: Response) => {
     const slug = req.params.slug as string;
+    if (slug === 'favicon.ico') { res.status(404).json({ success: false, message: 'Not found' }); return; }
     const page = await prisma.page.findUnique({
       where: { slug }
     });

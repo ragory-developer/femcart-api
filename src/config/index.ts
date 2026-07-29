@@ -13,7 +13,7 @@ const getJwtSecret = (secret: string | undefined, name: string): string => {
 };
 
 export const config = {
-  port: parseInt(process.env.PORT || '5000', 10),
+  port: parseInt(process.env.PORT || '5006', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   database: {
     url: process.env.DATABASE_URL || '',
@@ -24,12 +24,12 @@ export const config = {
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3006',
   allowedOrigins: process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
-    : [process.env.FRONTEND_URL || 'http://localhost:3000'],
+    : [process.env.FRONTEND_URL || 'http://localhost:3006'],
   allowAllOrigins: process.env.ALLOW_ALL_ORIGINS === 'true',
-  apiUrl: process.env.API_URL || `http://localhost:${process.env.PORT || '5000'}`,
+  apiUrl: process.env.API_URL || `http://localhost:${process.env.PORT || '5006'}`,
   sms: {
     gatewayUrl: process.env.SMS_GATEWAY_URL || 'https://smsmassdata.massdata.xyz/api/sms/send',
     apiKey: process.env.SMS_API_KEY || '',

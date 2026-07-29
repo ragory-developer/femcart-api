@@ -32,6 +32,17 @@ export interface WCProduct {
   variations: number[];
   brands?: { name: string; slug: string }[];
   meta_data?: { key: string; value: any }[];
+  dimensions?: { length: string; width: string; height: string };
+  tax_status?: string;
+  tax_class?: string;
+  shipping_class?: string;
+  manage_stock?: boolean;
+  backorders?: string;
+  sold_individually?: boolean;
+  virtual?: boolean;
+  downloadable?: boolean;
+  upsell_ids?: number[];
+  cross_sell_ids?: number[];
   [key: string]: any;
 }
 
@@ -54,7 +65,72 @@ export interface WCVariation {
   stock_status: string;
   image: WCImage | null;
   attributes: { id: number; name: string; option: string }[];
+  dimensions?: { length: string; width: string; height: string };
+  weight?: string;
+  tax_class?: string;
+  shipping_class?: string;
+  manage_stock?: boolean;
+  backorders?: string;
+  virtual?: boolean;
+  downloadable?: boolean;
   [key: string]: any;
+}
+
+export interface WCOrder {
+  id: number;
+  status: string;
+  currency: string;
+  date_created: string;
+  date_modified: string;
+  discount_total: string;
+  shipping_total: string;
+  total: string;
+  customer_id: number;
+  billing: {
+    first_name: string;
+    last_name: string;
+    address_1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+    email: string;
+    phone: string;
+  };
+  shipping: {
+    first_name: string;
+    last_name: string;
+    address_1: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: string;
+  };
+  payment_method: string;
+  payment_method_title: string;
+  transaction_id: string;
+  line_items: WCOrderItem[];
+  shipping_lines: any[];
+  fee_lines: any[];
+  coupon_lines: any[];
+  refunds: any[];
+}
+
+export interface WCOrderItem {
+  id: number;
+  name: string;
+  product_id: number;
+  variation_id: number;
+  quantity: number;
+  tax_class: string;
+  subtotal: string;
+  subtotal_tax: string;
+  total: string;
+  total_tax: string;
+  taxes: any[];
+  meta_data: any[];
+  sku: string;
+  price: number;
 }
 
 export interface WCCategory {
@@ -261,6 +337,46 @@ export class WordPressService {
       if (fallbackResp.ok) {
         resp = fallbackResp;
       }
+    }
+
+    if (!resp.ok) throw new Error(`WC API ${resp.status}`);
+    const total = parseInt(resp.headers.get('X-WP-Total') ?? '0', 10);
+    return total;
+  }
+
+  /** Fetch a page of orders */
+  async fetchOrders(setting: WCSetting, page = 1, perPage = 20): Promise<WCOrder[]> {
+    return wcFetch<WCOrder[]>(setting, 'orders', { page, per_page: perPage });
+  }
+
+  /** Get total order count */
+  async getTotalOrderCount(setting: WCSetting): Promise<number> {
+    const isHttps = setting.siteUrl.startsWith('https://');
+    const useHeader = isHttps;
+    
+    const queryParams: Record<string, any> = { per_page: 1 };
+    if (!useHeader) {
+      queryParams.consumer_key = setting.consumerKey;
+      queryParams.consumer_secret = setting.consumerSecret;
+    }
+
+    const url = buildUrl(setting, 'orders', queryParams);
+    const headers: Record<string, string> = {};
+    if (useHeader) {
+      headers.Authorization = makeAuth(setting.consumerKey, setting.consumerSecret);
+    }
+
+    let resp = await fetchWithTimeout(url, { headers, timeout: 15000 });
+
+    if (resp.status === 401 && useHeader) {
+      const fallbackParams = {
+        per_page: 1,
+        consumer_key: setting.consumerKey,
+        consumer_secret: setting.consumerSecret,
+      };
+      const fallbackUrl = buildUrl(setting, 'orders', fallbackParams);
+      const fallbackResp = await fetchWithTimeout(fallbackUrl, { timeout: 15000 });
+      if (fallbackResp.ok) resp = fallbackResp;
     }
 
     if (!resp.ok) throw new Error(`WC API ${resp.status}`);

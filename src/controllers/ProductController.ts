@@ -630,6 +630,7 @@ export class ProductController extends BaseController {
 
   getBySlug = asyncHandler(async (req: Request, res: Response) => {
     const slugParam = req.params.slug as string;
+    if (slugParam === 'favicon.ico') { res.status(404).json({ success: false, message: 'Not found' }); return; }
     
     // 1. Generate unique cache key based on slug and current cache version
     const version = await CacheService.get<number>(KeyFactory.productCacheVersion()) || 1;

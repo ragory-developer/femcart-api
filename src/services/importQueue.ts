@@ -6,6 +6,7 @@
 
 import prisma from '../config/database';
 import { importCategories, importProduct } from './importService';
+import { importOrder } from './orderImportService';
 import { WCSetting, wordPressService } from './wordpressService';
 
 /** Set of currently running task IDs */
@@ -13,7 +14,7 @@ const runningTasks = new Set<string>();
 /** Set of tasks that have been requested to cancel/pause */
 const cancelRequests = new Set<string>();
 /** Queue of task IDs waiting to run */
-const taskQueue: { setting: WCSetting, taskId: string, productIds?: number[] }[] = [];
+const taskQueue: { setting: WCSetting, taskId: string, productIds?: number[], imageStorageStrategy?: 'LOCAL' | 'DIRECT_LINK' | 'AWS_S3' }[] = [];
 /** Max concurrent tasks to prevent backend freeze */
 const MAX_CONCURRENT_TASKS = 1;
 
@@ -35,7 +36,7 @@ async function processQueue() {
 
   const next = taskQueue.shift()!;
   // Start the task (no await so we can check for more if MAX > 1)
-  executeTask(next.setting, next.taskId, next.productIds);
+  executeTask(next.setting, next.taskId, next.productIds, next.imageStorageStrategy);
 }
 
 /**
@@ -45,7 +46,8 @@ async function processQueue() {
 export async function startImportTask(
   setting: WCSetting,
   taskId: string,
-  productIds?: number[]
+  productIds?: number[],
+  imageStorageStrategy: 'LOCAL' | 'DIRECT_LINK' | 'AWS_S3' = 'AWS_S3'
 ): Promise<void> {
   const existing = await prisma.importTask.findUnique({ where: { id: taskId } });
   if (!existing) throw new Error('Task not found');
@@ -60,12 +62,12 @@ export async function startImportTask(
     data: { status: 'queued' },
   });
 
-  taskQueue.push({ setting, taskId, productIds });
+  taskQueue.push({ setting, taskId, productIds, imageStorageStrategy });
   processQueue();
 }
 
 /** Internal execution wrapper */
-async function executeTask(setting: WCSetting, taskId: string, productIds?: number[]) {
+async function executeTask(setting: WCSetting, taskId: string, productIds?: number[], imageStorageStrategy?: 'LOCAL' | 'DIRECT_LINK' | 'AWS_S3') {
   const task = await prisma.importTask.findUnique({ where: { id: taskId } });
   if (!task) return;
 
@@ -79,7 +81,7 @@ async function executeTask(setting: WCSetting, taskId: string, productIds?: numb
   cancelRequests.delete(taskId);
 
   try {
-    await runTask(task, setting, productIds);
+    await runTask(task, setting, productIds, imageStorageStrategy);
   } catch (err: any) {
     console.error(`[Task ${taskId.slice(0, 6)}] Crashed:`, err.message);
     await prisma.importTask
@@ -95,7 +97,8 @@ async function executeTask(setting: WCSetting, taskId: string, productIds?: numb
 async function runTask(
   task: any,
   setting: WCSetting,
-  productIds?: number[]
+  productIds?: number[],
+  imageStorageStrategy?: 'LOCAL' | 'DIRECT_LINK' | 'AWS_S3'
 ): Promise<void> {
   let imported = task.imported as number;
   let failed = task.failed as number;
@@ -129,53 +132,80 @@ async function runTask(
 
   try {
     logFn(`🚀 Starting: ${task.name}`);
-    logFn(`Fetching category map from WooCommerce...`);
-    const catMap = await importCategories(setting);
-    logFn(`✔️ ${catMap.size} categories cached.`);
-
-    let wcProducts: any[] = [];
-
-    if (productIds && productIds.length > 0) {
-      // Selective import mode
-      logFn(`Fetching ${productIds.length} specific product(s)...`);
-      for (const pid of productIds) {
-        if (cancelRequests.has(task.id)) break;
-        try {
-          const product = await wordPressService.fetchProductById(setting, pid);
-          wcProducts.push(product);
-        } catch (err: any) {
-          failed++;
-          logFn(`❌ Failed to fetch product ${pid}: ${err.message}`);
-        }
-      }
-    } else {
-      // Batch-page import mode
-      logFn(`Fetching page ${task.pageNumber} from WooCommerce (${task.perPage} per page)...`);
+    
+    if (task.entityType === 'ORDERS') {
+      logFn(`Fetching page ${task.pageNumber} of orders from WooCommerce...`);
       try {
-        wcProducts = await wordPressService.fetchProducts(setting, task.pageNumber, task.perPage);
-        logFn(`✔️ Fetched ${wcProducts.length} products.`);
+        const wcOrders = await wordPressService.fetchOrders(setting, task.pageNumber, task.perPage);
+        logFn(`✔️ Fetched ${wcOrders.length} orders.`);
+        
+        for (const wcOrder of wcOrders) {
+          if (cancelRequests.has(task.id)) {
+            logFn(`⏸️ Pause requested. Stopping after current order.`);
+            break;
+          }
+          try {
+            await importOrder(wcOrder, setting, logFn);
+            imported++;
+          } catch (err: any) {
+            failed++;
+            logFn(`❌ Error on Order #${wcOrder.id}: ${err.message}`);
+          }
+          if (imported % 5 === 0 || failed % 5 === 0) await flushLogs();
+        }
       } catch (err: any) {
         logFn(`❌ Batch fetch failed: ${err.message}`);
         throw err;
       }
-    }
+    } else {
+      logFn(`Fetching category map from WooCommerce...`);
+      const catMap = await importCategories(setting);
+      logFn(`✔️ ${catMap.size} categories cached.`);
 
-    for (const wcProduct of wcProducts) {
-      if (cancelRequests.has(task.id)) {
-        logFn(`⏸️ Pause requested. Stopping after current product.`);
-        break;
+      let wcProducts: any[] = [];
+
+      if (productIds && productIds.length > 0) {
+        // Selective import mode
+        logFn(`Fetching ${productIds.length} specific product(s)...`);
+        for (const pid of productIds) {
+          if (cancelRequests.has(task.id)) break;
+          try {
+            const product = await wordPressService.fetchProductById(setting, pid);
+            wcProducts.push(product);
+          } catch (err: any) {
+            failed++;
+            logFn(`❌ Failed to fetch product ${pid}: ${err.message}`);
+          }
+        }
+      } else {
+        // Batch-page import mode
+        logFn(`Fetching page ${task.pageNumber} from WooCommerce (${task.perPage} per page)...`);
+        try {
+          wcProducts = await wordPressService.fetchProducts(setting, task.pageNumber, task.perPage);
+          logFn(`✔️ Fetched ${wcProducts.length} products.`);
+        } catch (err: any) {
+          logFn(`❌ Batch fetch failed: ${err.message}`);
+          throw err;
+        }
       }
-      try {
-        await importProduct(wcProduct, setting, catMap, logFn);
-        imported++;
-      } catch (err: any) {
-        failed++;
-        logFn(`❌ Error on "${wcProduct.name}": ${err.message}`);
-      }
-      
-      // Flush logs only every 5 products to reduce DB load
-      if (imported % 5 === 0 || failed % 5 === 0) {
-        await flushLogs();
+
+      for (const wcProduct of wcProducts) {
+        if (cancelRequests.has(task.id)) {
+          logFn(`⏸️ Pause requested. Stopping after current product.`);
+          break;
+        }
+        try {
+          await importProduct(wcProduct, setting, catMap, imageStorageStrategy ?? 'AWS_S3', logFn);
+          imported++;
+        } catch (err: any) {
+          failed++;
+          logFn(`❌ Error on "${wcProduct.name}": ${err.message}`);
+        }
+        
+        // Flush logs only every 5 products to reduce DB load
+        if (imported % 5 === 0 || failed % 5 === 0) {
+          await flushLogs();
+        }
       }
     }
 

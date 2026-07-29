@@ -147,6 +147,19 @@ model Product {
   averageRating       Float            @default(0)
   ratingCount         Int              @default(0)
   comparePrice        Float?
+
+  length              String?
+  width               String?
+  height              String?
+  taxStatus           String?
+  taxClass            String?
+  shippingClass       String?
+  manageStock         Boolean          @default(false)
+  backorders          String?
+  soldIndividually    Boolean          @default(false)
+  isVirtual           Boolean          @default(false)
+  isDownloadable      Boolean          @default(false)
+
   orderItems          OrderItem[]
   brand               Brand?           @relation(fields: [brandId], references: [id])
   variants            ProductVariant[]
@@ -203,6 +216,19 @@ model ProductVariant {
   enabled           Boolean            @default(true)
   specialPriceEnd   DateTime?
   specialPriceStart DateTime?
+  externalId        String?            @unique
+
+  length            String?
+  width             String?
+  height            String?
+  weight            String?
+  taxClass          String?
+  shippingClass     String?
+  manageStock       Boolean            @default(false)
+  backorders        String?
+  isVirtual         Boolean            @default(false)
+  isDownloadable    Boolean            @default(false)
+
   orderItems        OrderItem[]
   product           Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   attributes        VariantAttribute[]
@@ -264,6 +290,8 @@ model Order {
   updatedAt       DateTime      @updatedAt
   deletedAt       DateTime?
   deletedBy       String?
+  externalId      String?       @unique
+  externalSource  String?
   area            Area?         @relation(fields: [deliveryAreaId], references: [id])
   city            City?         @relation(fields: [deliveryCityId], references: [id])
   state           State?        @relation(fields: [deliveryStateId], references: [id])
@@ -291,6 +319,7 @@ model OrderItem {
   damagedQuantity  Int             @default(0)
   restockedQuantity Int            @default(0)
   returnReason     String?
+  externalId       String?
   order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product          Product?        @relation(fields: [productId], references: [id])
   variant          ProductVariant? @relation(fields: [variantId], references: [id])
@@ -468,6 +497,7 @@ model ImportTask {
   imported   Int       @default(0)
   failed     Int       @default(0)
   details    String?   @db.LongText
+  entityType String    @default("PRODUCTS")
   startedAt  DateTime?
   finishedAt DateTime?
   createdAt  DateTime  @default(now())
@@ -862,4 +892,15 @@ model NewsletterSubscriber {
   status    String   @default("SUBSCRIBED") // SUBSCRIBED, UNSUBSCRIBED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ShopifySetting {
+  id              String   @id @default(cuid())
+  shopUrl         String
+  accessToken     String   @db.Text
+  apiVersion      String   @default("2024-01")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("shopify_setting")
 }
