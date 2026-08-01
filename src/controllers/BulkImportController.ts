@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { parseSpreadsheet, importProducts, importOrders, validateSpreadsheetRows } from '../services/bulkImportService';
-
+import { importShopifyProducts, importWooProducts, importShopifyOrders, importWooOrders } from '../services/nativeParsers';
 export class BulkImportController {
   
   /**
@@ -35,7 +35,15 @@ export class BulkImportController {
       // Run Import in background to prevent API gateway timeout
       setTimeout(async () => {
         try {
-          const result = await importProducts(rows, mapping, log.id);
+          const platform = req.body.importPlatform;
+          let result;
+          if (platform === 'SHOPIFY') {
+            result = await importShopifyProducts(rows, log.id);
+          } else if (platform === 'WOOCOMMERCE') {
+            result = await importWooProducts(rows, log.id);
+          } else {
+            result = await importProducts(rows, mapping, log.id);
+          }
           await prisma.importLog.update({
             where: { id: log.id },
             data: {
@@ -99,7 +107,15 @@ export class BulkImportController {
       // Run Import in background
       setTimeout(async () => {
         try {
-          const result = await importOrders(rows, mapping, log.id);
+          const platform = req.body.importPlatform;
+          let result;
+          if (platform === 'SHOPIFY') {
+            result = await importShopifyOrders(rows, log.id);
+          } else if (platform === 'WOOCOMMERCE') {
+            result = await importWooOrders(rows, log.id);
+          } else {
+            result = await importOrders(rows, mapping, log.id);
+          }
           await prisma.importLog.update({
             where: { id: log.id },
             data: {
