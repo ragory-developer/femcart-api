@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../config/database';
-import { parseSpreadsheet, importProducts, importOrders } from '../services/bulkImportService';
+import { parseSpreadsheet, importProducts, importOrders, validateSpreadsheetRows } from '../services/bulkImportService';
 
 export class BulkImportController {
   
@@ -171,6 +171,31 @@ export class BulkImportController {
         take: 30
       });
       return res.status(200).json({ success: true, data: logs });
+    } catch (e: any) {
+      return res.status(500).json({ success: false, message: e.message });
+    }
+  }
+
+  /**
+   * Pre-import dry-run validation checks
+   */
+  static async validate(req: Request, res: Response) {
+    try {
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ success: false, message: 'No spreadsheet file uploaded.' });
+      }
+
+      const mapping = JSON.parse(req.body.mapping || '{}');
+      const importType = req.body.importType || 'PRODUCTS';
+      const rows = parseSpreadsheet(file.buffer);
+
+      const warnings = validateSpreadsheetRows(rows, mapping, importType);
+
+      return res.status(200).json({
+        success: true,
+        warnings
+      });
     } catch (e: any) {
       return res.status(500).json({ success: false, message: e.message });
     }

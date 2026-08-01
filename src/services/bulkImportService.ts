@@ -290,10 +290,40 @@ export async function importProducts(
       const imgStrings = row[imgCol]?.toString().split(',') || [];
       const image = imgStrings[0]?.trim() || parent.image;
 
-      // Upsert Product Variant
-      const existingVariant = sku 
-        ? await prisma.productVariant.findFirst({ where: { sku } })
-        : null;
+      // 1. Parse Attributes first
+      const rawAttrs = row[varAttrCol]?.toString().split(',') || [];
+      const parsedAttrs: { name: string; value: string }[] = [];
+      for (const attr of rawAttrs) {
+        const idx = attr.indexOf(':');
+        if (idx !== -1) {
+          const name = attr.substring(0, idx).trim();
+          const value = attr.substring(idx + 1).trim();
+          if (name && value) {
+            parsedAttrs.push({ name, value });
+          }
+        }
+      }
+
+      // 2. Lookup Variant (try matching by SKU, fallback to matching all attributes)
+      let existingVariant = null;
+      if (sku) {
+        existingVariant = await prisma.productVariant.findFirst({ where: { sku } });
+      } else if (parsedAttrs.length > 0) {
+        const parentVariants = await prisma.productVariant.findMany({
+          where: { productId: parent.id },
+          include: { attributes: true }
+        });
+        
+        existingVariant = parentVariants.find(v => {
+          if (v.attributes.length !== parsedAttrs.length) return false;
+          return parsedAttrs.every(pa => 
+            v.attributes.some(va => 
+              va.name.toLowerCase() === pa.name.toLowerCase() && 
+              va.value.toLowerCase() === pa.value.toLowerCase()
+            )
+          );
+        }) || null;
+      }
 
       const variantData = {
         productId: parent.id,
@@ -316,30 +346,20 @@ export async function importProducts(
         });
       }
 
-      // Add Attributes
-      // Format: "Color:Red,Size:M"
-      const rawAttrs = row[varAttrCol]?.toString().split(',') || [];
-      
       // Clean previous attributes
       await prisma.variantAttribute.deleteMany({
         where: { variantId: variant.id }
       });
 
-      for (const attr of rawAttrs) {
-        const idx = attr.indexOf(':');
-        if (idx !== -1) {
-          const name = attr.substring(0, idx).trim();
-          const value = attr.substring(idx + 1).trim();
-          if (name && value) {
-            await prisma.variantAttribute.create({
-              data: {
-                variantId: variant.id,
-                name,
-                value
-              }
-            });
+      // Insert fresh attributes
+      for (const attr of parsedAttrs) {
+        await prisma.variantAttribute.create({
+          data: {
+            variantId: variant.id,
+            name: attr.name,
+            value: attr.value
           }
-        }
+        });
       }
 
       imported++;
@@ -533,4 +553,90 @@ export async function importOrders(
   }
 
   return { imported, failed, errors };
+}
+
+export function validateSpreadsheetRows(
+  rows: any[],
+  mapping: ColumnMapping,
+  importType: "PRODUCTS" | "ORDERS"
+): string[] {
+  const warnings: string[] = [];
+
+  if (importType === "PRODUCTS") {
+    const nameCol = mapping.name || "name";
+    const priceCol = mapping.price || "price";
+    const skuCol = mapping.sku || "sku";
+    const stockCol = mapping.stock || "stock";
+    const comparePriceCol = mapping.comparePrice || "comparePrice";
+    const specialPriceCol = mapping.specialPrice || "specialPrice";
+    const parentSkuCol = mapping.parentSku || "parentSku";
+    const parentSlugCol = mapping.parentSlug || "parentSlug";
+    const varAttrCol = mapping.variantAttributes || "variantAttributes";
+
+    rows.forEach((row, idx) => {
+      const lineNum = idx + 2; // header is line 1
+      const name = row[nameCol]?.toString().trim();
+      const parentSku = row[parentSkuCol]?.toString().trim();
+      const parentSlug = row[parentSlugCol]?.toString().trim();
+      const isVariant = !!(parentSku || parentSlug);
+
+      if (!isVariant && !name) {
+        warnings.push(`Row ${lineNum}: Product Name is missing.`);
+      }
+
+      const priceVal = parseFloat(row[priceCol]);
+      if (!isVariant && isNaN(priceVal)) {
+        warnings.push(`Row ${lineNum}: Price is missing or is not a valid number.`);
+      } else if (priceVal < 0) {
+        warnings.push(`Row ${lineNum}: Price cannot be negative.`);
+      }
+
+      const stockVal = parseInt(row[stockCol]);
+      if (row[stockCol] && isNaN(stockVal)) {
+        warnings.push(`Row ${lineNum}: Stock "${row[stockCol]}" is not a valid integer.`);
+      }
+
+      const compareVal = parseFloat(row[comparePriceCol]);
+      if (row[comparePriceCol] && isNaN(compareVal)) {
+        warnings.push(`Row ${lineNum}: Compare price "${row[comparePriceCol]}" is not a valid number.`);
+      }
+
+      const specialVal = parseFloat(row[specialPriceCol]);
+      if (row[specialPriceCol] && isNaN(specialVal)) {
+        warnings.push(`Row ${lineNum}: Special price "${row[specialPriceCol]}" is not a valid number.`);
+      }
+
+      if (isVariant) {
+        const sku = row[skuCol]?.toString().trim();
+        const attrs = row[varAttrCol]?.toString().trim();
+        if (!sku && !attrs) {
+          warnings.push(`Row ${lineNum}: Variant row is missing both unique SKU and Variant Attributes.`);
+        }
+      }
+    });
+  } else {
+    const orderIdCol = mapping.orderId || "orderId";
+    const totalCol = mapping.total || "total";
+    const itemsCol = mapping.items || "items";
+
+    rows.forEach((row, idx) => {
+      const lineNum = idx + 2;
+      const orderId = row[orderIdCol]?.toString().trim();
+      if (!orderId) {
+        warnings.push(`Row ${lineNum}: Order ID is missing.`);
+      }
+
+      const totalVal = parseFloat(row[totalCol]);
+      if (isNaN(totalVal)) {
+        warnings.push(`Row ${lineNum}: Total amount is missing or not a valid number.`);
+      }
+
+      const items = row[itemsCol]?.toString().trim();
+      if (!items) {
+        warnings.push(`Row ${lineNum}: Order Items (SKUs) column is missing.`);
+      }
+    });
+  }
+
+  return warnings;
 }
