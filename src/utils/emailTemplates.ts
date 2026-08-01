@@ -19,24 +19,24 @@ export const sendOrderConfirmationEmail = async (order: any, customerEmail: stri
 
   let title = 'Order Confirmation Receipt';
   let message = `Thank you for shopping with us! We have received your order <strong>#${order.id.slice(-6).toUpperCase()}</strong>.`;
-  let subject = `Order Confirmation #${order.id.slice(-6).toUpperCase()} - City Halal Mart`;
+  let subject = `Order Confirmation #${order.id.slice(-6).toUpperCase()} - Femcart`;
 
   if (order.paymentStatus === 'PAID' || order.status === 'COMPLETED' || order.status === 'DELIVERED') {
     title = 'Order Confirmation (Paid)';
-    subject = `Order Confirmation (Paid) #${order.id.slice(-6).toUpperCase()} - City Halal Mart`;
+    subject = `Order Confirmation (Paid) #${order.id.slice(-6).toUpperCase()} - Femcart`;
   } else if (order.paymentMethod === 'COD') {
     title = 'Order Received (Cash on Delivery)';
-    subject = `Order Received (COD) #${order.id.slice(-6).toUpperCase()} - City Halal Mart`;
+    subject = `Order Received (COD) #${order.id.slice(-6).toUpperCase()} - Femcart`;
   } else {
     title = 'Order Received (Payment Pending)';
-    subject = `Action Required: Payment Pending #${order.id.slice(-6).toUpperCase()} - City Halal Mart`;
+    subject = `Action Required: Payment Pending #${order.id.slice(-6).toUpperCase()} - Femcart`;
     message = `We have received your order <strong>#${order.id.slice(-6).toUpperCase()}</strong>. Please note that your order is awaiting payment. If you haven't completed the payment yet, you can do so from your dashboard.`;
   }
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h1 style="color: #E60012; margin: 0;">City Halal Mart</h1>
+        <h1 style="color: #E60012; margin: 0;">Femcart</h1>
         <p style="color: #666; font-size: 14px;">${title}</p>
       </div>
 
@@ -93,7 +93,7 @@ export const sendOrderConfirmationEmail = async (order: any, customerEmail: stri
 
       <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eaeaea;">
         <p style="color: #888; font-size: 12px;">If you have any questions, please contact our support team.</p>
-        <p style="color: #888; font-size: 12px;">&copy; ${new Date().getFullYear()} City Halal Mart. All rights reserved.</p>
+        <p style="color: #888; font-size: 12px;">&copy; ${new Date().getFullYear()} Femcart. All rights reserved.</p>
       </div>
     </div>
   `;
