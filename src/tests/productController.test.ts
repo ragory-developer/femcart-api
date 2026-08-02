@@ -12,6 +12,7 @@ vi.mock('../config/database', () => {
   };
   return {
     default: mockPrisma,
+    basePrisma: mockPrisma,
   };
 });
 

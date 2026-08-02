@@ -2,7 +2,6 @@ import { Router } from 'express';
 import adminRoleRoutes from './adminRoleRoutes';
 import adminUsersRoutes from './adminUsersRoutes';
 import authRoutes from './authRoutes';
-import bannerRoutes from './bannerRoutes';
 import brandRoutes from './brandRoutes';
 
 import cartRoutes from './cartRoutes';
@@ -68,7 +67,6 @@ router.use('/coupons', couponRoutes);
 router.use('/navigation', navigationRoutes);
 router.use('/search', searchRoutes);
 router.use('/trash', trashRoutes);
-router.use('/banners', bannerRoutes);
 router.use('/testimonials', testimonialRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/tracking', trackingRoutes);

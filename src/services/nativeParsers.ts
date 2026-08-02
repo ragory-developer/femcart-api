@@ -23,14 +23,29 @@ async function getOrCreateBrand(name: string): Promise<string> {
   return brand.id;
 }
 
-async function getOrCreateCategory(name: string): Promise<string> {
-  const slug = slugify(name);
-  const category = await prisma.category.upsert({
-    where: { slug },
-    update: { name },
-    create: { name, slug },
-  });
-  return category.id;
+async function getOrCreateCategory(path: string): Promise<string> {
+  const parts = path.split('>').map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return '';
+
+  let parentId: string | null = null;
+  let fullPath = "";
+  let lastCategoryId = "";
+
+  for (const part of parts) {
+    fullPath = fullPath ? `${fullPath} ${part}` : part;
+    const slug = slugify(fullPath);
+    
+    const cat: any = await prisma.category.upsert({
+      where: { slug },
+      update: { name: part, parentId },
+      create: { name: part, slug, parentId },
+    });
+    
+    parentId = cat.id;
+    lastCategoryId = cat.id;
+  }
+  
+  return lastCategoryId;
 }
 
 export async function importShopifyProducts(
@@ -40,146 +55,134 @@ export async function importShopifyProducts(
   let imported = 0;
   let failed = 0;
   const errors: string[] = [];
+  
+  const BATCH_SIZE = 20;
+  let batch: any[] = [];
+  const currentOptionNames: Record<string, { opt1?: string, opt2?: string, opt3?: string }> = {};
 
-  const groupedByHandle: Record<string, any[]> = {};
   for (const row of rows) {
-    const handle = row['Handle']?.toString().trim();
-    if (handle) {
-      if (!groupedByHandle[handle]) groupedByHandle[handle] = [];
-      groupedByHandle[handle].push(row);
-    }
-  }
-
-  for (const handle of Object.keys(groupedByHandle)) {
     try {
-      const groupRows = groupedByHandle[handle];
-      const parentRow = groupRows[0];
-      
-      const name = parentRow['Title']?.toString().trim() || handle;
-      if (!name) continue;
+      const handle = row['Handle']?.toString().trim();
+      const title = row['Title']?.toString().trim();
+      const name = title || handle; // Shopify uses handle for variations
 
-      const priceVal = parseFloat(parentRow['Variant Price']);
-      const price = isNaN(priceVal) ? 0 : priceVal;
+      const priceVal = parseFloat(row['Variant Price']);
+      let price = isNaN(priceVal) ? null : priceVal;
 
-      const compareVal = parseFloat(parentRow['Variant Compare At Price']);
+      const compareVal = parseFloat(row['Variant Compare At Price']);
       const comparePrice = isNaN(compareVal) ? null : compareVal;
 
-      const stockVal = parseInt(parentRow['Variant Inventory Qty']);
-      const stock = isNaN(stockVal) ? 0 : stockVal;
+      const stockVal = parseInt(row['Variant Inventory Qty']);
+      const stock = isNaN(stockVal) ? null : stockVal;
 
-      const description = parentRow['Body (HTML)']?.toString().trim() || '';
-      
-      let brandId = null;
-      const vendor = parentRow['Vendor']?.toString().trim();
-      if (vendor) brandId = await getOrCreateBrand(vendor);
+      const description = row['Body (HTML)']?.toString().trim();
+      const brandName = row['Vendor']?.toString().trim();
+      const categories = row['Custom Product Type']?.toString().trim() || row['Standardized Product Type']?.toString().trim();
+      const images = row['Image Src']?.toString().trim();
+      const sku = row['Variant SKU']?.toString().trim();
 
-      let catId = null;
-      const type = parentRow['Custom Product Type']?.toString().trim() || parentRow['Standardized Product Type']?.toString().trim();
-      if (type) catId = await getOrCreateCategory(type);
-      
-      const mainImage = parentRow['Image Src']?.toString().trim() || null;
-      const galleryImages = groupRows
-        .map(r => r['Image Src']?.toString().trim())
-        .filter(Boolean);
-
-      const sku = parentRow['Variant SKU']?.toString().trim() || null;
-      const existing = sku 
-        ? await prisma.product.findFirst({ where: { sku } })
-        : await prisma.product.findUnique({ where: { slug: handle } });
-        
-      const slug = existing ? existing.slug : await uniqueSlug(handle);
-
-      const productData = {
-        name,
-        slug,
-        price,
-        comparePrice,
-        stock,
-        description,
-        brandId,
-        image: mainImage,
-        images: JSON.stringify(galleryImages),
-        productType: groupRows.length > 1 ? ProductType.VARIABLE : ProductType.SIMPLE,
-      };
-
-      let product;
-      if (existing) {
-        product = await prisma.product.update({
-          where: { id: existing.id },
-          data: { ...productData, categories: catId ? { set: [{ id: catId }] } : undefined }
-        });
-      } else {
-        product = await prisma.product.create({
-          data: { ...productData, categories: catId ? { connect: [{ id: catId }] } : undefined }
-        });
+      if (handle && !currentOptionNames[handle]) {
+        currentOptionNames[handle] = {};
       }
 
-      for (const vRow of groupRows) {
-        const vSku = vRow['Variant SKU']?.toString().trim() || null;
-        const vPrice = parseFloat(vRow['Variant Price']) || price;
-        const vCompare = parseFloat(vRow['Variant Compare At Price']) || null;
-        const vStock = parseInt(vRow['Variant Inventory Qty']) || 0;
-        const vImage = vRow['Image Src']?.toString().trim() || null;
+      const opt1Name = row[`Option1 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt1 : undefined);
+      if (row[`Option1 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt1 = row[`Option1 Name`].toString().trim();
 
-        const options: { name: string, value: string }[] = [];
-        for (let i = 1; i <= 3; i++) {
-          const optName = vRow[`Option${i} Name`]?.toString().trim();
-          const optVal = vRow[`Option${i} Value`]?.toString().trim();
-          if (optName && optVal && optName.toLowerCase() !== 'title' && optVal.toLowerCase() !== 'default title') {
-            options.push({ name: optName, value: optVal });
+      const opt2Name = row[`Option2 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt2 : undefined);
+      if (row[`Option2 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt2 = row[`Option2 Name`].toString().trim();
+
+      const opt3Name = row[`Option3 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt3 : undefined);
+      if (row[`Option3 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt3 = row[`Option3 Name`].toString().trim();
+
+      const optionsArr = [];
+      const opt1Val = row[`Option1 Value`]?.toString().trim();
+      if (opt1Name && opt1Val && opt1Name.toLowerCase() !== 'title' && opt1Val.toLowerCase() !== 'default title') {
+        optionsArr.push({ name: opt1Name, value: opt1Val });
+      }
+      const opt2Val = row[`Option2 Value`]?.toString().trim();
+      if (opt2Name && opt2Val && opt2Name.toLowerCase() !== 'title' && opt2Val.toLowerCase() !== 'default title') {
+        optionsArr.push({ name: opt2Name, value: opt2Val });
+      }
+      const opt3Val = row[`Option3 Value`]?.toString().trim();
+      if (opt3Name && opt3Val && opt3Name.toLowerCase() !== 'title' && opt3Val.toLowerCase() !== 'default title') {
+        optionsArr.push({ name: opt3Name, value: opt3Val });
+      }
+      const options = optionsArr.length ? JSON.stringify(optionsArr) : null;
+
+      // Handle Gallery Images: Rows with no title and no options but an image
+      if (!title && !opt1Val && images && handle) {
+        // Find the parent row in the current batch
+        const parentRow = batch.find(r => r.slug === handle && r.parentSku === null);
+        if (parentRow) {
+          try {
+            const parsedImages = parentRow.images ? JSON.parse(parentRow.images) : [];
+            parsedImages.push(images);
+            parentRow.images = JSON.stringify(parsedImages);
+          } catch (e) {
+            // Ignore parse error
           }
         }
-
-        if (groupRows.length === 1 && options.length === 0) {
-           // Skip creating variant for a simple product with no options
-           continue; 
-        }
-
-        let existingVariant = null;
-        if (vSku) {
-          existingVariant = await prisma.productVariant.findFirst({ where: { sku: vSku } });
-        } else if (options.length > 0) {
-           const parentVariants = await prisma.productVariant.findMany({
-             where: { productId: product.id }, include: { attributes: true }
-           });
-           existingVariant = parentVariants.find(v => {
-             if (v.attributes.length !== options.length) return false;
-             return options.every(o => v.attributes.some(a => a.name.toLowerCase() === o.name.toLowerCase() && a.value.toLowerCase() === o.value.toLowerCase()));
-           });
-        }
-
-        const vData = {
-          productId: product.id,
-          sku: vSku,
-          price: vPrice,
-          comparePrice: vCompare,
-          stock: vStock,
-          image: vImage,
-        };
-
-        let variant;
-        if (existingVariant) {
-           variant = await prisma.productVariant.update({ where: { id: existingVariant.id }, data: vData });
-        } else {
-           variant = await prisma.productVariant.create({ data: vData });
-        }
-
-        await prisma.variantAttribute.deleteMany({ where: { variantId: variant.id } });
-        for (const opt of options) {
-           await prisma.variantAttribute.create({ data: { variantId: variant.id, name: opt.name, value: opt.value } });
-        }
+        // Skip creating a new row for this gallery image
+        continue;
       }
 
-      imported++;
-      await prisma.importLog.update({ where: { id: logId }, data: { imported, failed } });
+      const fieldErrors: any = {};
+      if (!name) fieldErrors.name = "Name or Handle is required";
+      
+      const warnings: any = {};
+      if (price === null) {
+        price = 0;
+        warnings.price = "Missing price set to 0. Please update.";
+      } else if (price < 0) {
+        fieldErrors.price = "Price cannot be negative";
+      }
 
-    } catch(e: any) {
+      const status = Object.keys(fieldErrors).length > 0 ? 'INVALID' : 'VALID';
+      const finalErrors = { ...fieldErrors, ...warnings };
+
+      const dataPayload: any = {
+          importLogId: logId,
+          status,
+          name,
+          slug: handle,
+          sku,
+          price,
+          comparePrice,
+          stock,
+          description,
+          brandName,
+          categories,
+          images: images ? JSON.stringify([images]) : null,
+          parentSku: !title && handle ? handle : null,
+          options,
+          errors: Object.keys(finalErrors).length > 0 ? finalErrors : null
+      };
+
+      batch.push(dataPayload);
+      
+      if (batch.length >= BATCH_SIZE) {
+        await prisma.importStagingRow.createMany({ data: batch });
+        imported += batch.length;
+        await prisma.importLog.update({ where: { id: logId }, data: { imported } });
+        batch = [];
+      }
+    } catch (e: any) {
       failed++;
-      errors.push(`Error on Shopify Handle [${handle}]: ${e.message}`);
-      await prisma.importLog.update({ where: { id: logId }, data: { imported, failed, errors: errors.join('\n') } });
+      errors.push(`Row error: ${e.message}`);
     }
   }
 
+  if (batch.length > 0) {
+    try {
+      await prisma.importStagingRow.createMany({ data: batch });
+      imported += batch.length;
+    } catch (e: any) {
+      failed += batch.length;
+      errors.push(`Final batch error: ${e.message}`);
+    }
+  }
+
+  await prisma.importLog.update({ where: { id: logId }, data: { imported, failed, errors: errors.join('\n') } });
   return { imported, failed, errors };
 }
 
@@ -190,128 +193,95 @@ export async function importWooProducts(
   let imported = 0;
   let failed = 0;
   const errors: string[] = [];
+  const BATCH_SIZE = 20;
+  let batch: any[] = [];
 
-  const parents = rows.filter(r => r['Type']?.toString().toLowerCase() !== 'variation');
-  const variants = rows.filter(r => r['Type']?.toString().toLowerCase() === 'variation');
-  const wooSkuToProductId: Record<string, string> = {};
-
-  for (const row of parents) {
+  for (const row of rows) {
     try {
+      const type = row['Type']?.toString().toLowerCase();
+      const isVariant = type === 'variation';
+
       const name = row['Name']?.toString().trim();
-      if (!name) continue;
-
-      const priceVal = parseFloat(row['Regular price']);
-      const price = isNaN(priceVal) ? 0 : priceVal;
-      const specialVal = parseFloat(row['Sale price']);
-      const specialPrice = isNaN(specialVal) ? null : specialVal;
-      const stockVal = parseInt(row['Stock']);
-      const stock = isNaN(stockVal) ? 0 : stockVal;
-
-      const description = row['Description']?.toString().trim() || '';
-      const shortDescription = row['Short description']?.toString().trim() || '';
-      const sku = row['SKU']?.toString().trim() || null;
+      let priceVal = parseFloat(row['Regular price']);
+      let price = isNaN(priceVal) ? null : priceVal;
       
-      const images = row['Images']?.toString().split(',').map((u: string) => u.trim()).filter(Boolean) || [];
-      const mainImage = images[0] || null;
+      const specialVal = parseFloat(row['Sale price']);
+      const comparePrice = isNaN(specialVal) ? null : specialVal; // Map sale price logic properly in commit phase
 
-      const catNames = row['Categories']?.toString().split(',').map((c: string) => c.trim()).filter(Boolean) || [];
-      const categoryConnections: { id: string }[] = [];
-      for (const c of catNames) categoryConnections.push({ id: await getOrCreateCategory(c) });
+      const stockVal = parseInt(row['Stock']);
+      const stock = isNaN(stockVal) ? null : stockVal;
 
-      const baseSlug = slugify(name);
-      const existing = sku ? await prisma.product.findFirst({ where: { sku } }) : await prisma.product.findUnique({ where: { slug: baseSlug } });
-      const slug = existing ? existing.slug : await uniqueSlug(baseSlug);
+      const description = row['Description']?.toString().trim();
+      const sku = row['SKU']?.toString().trim();
+      const imagesStr = row['Images']?.toString().trim();
+      const images = imagesStr ? JSON.stringify(imagesStr.split(',').map((u: string) => u.trim()).filter(Boolean)) : null;
 
-      const isVariable = row['Type']?.toString().toLowerCase() === 'variable';
+      const categories = row['Categories']?.toString().trim();
+      const parentSku = isVariant ? row['Parent']?.toString().trim() : null;
 
-      const pData = {
-        name, slug, sku, price, specialPrice, stock, description, shortDescription, image: mainImage, images: JSON.stringify(images), productType: isVariable ? ProductType.VARIABLE : ProductType.SIMPLE
-      };
+      const optionsArr = [];
+      if (isVariant) {
+        for (let i = 1; i <= 5; i++) {
+          const optName = row[`Attribute ${i} name`]?.toString().trim();
+          const optVal = row[`Attribute ${i} value(s)`]?.toString().trim();
+          if (optName && optVal) optionsArr.push({ name: optName, value: optVal });
+        }
+      }
+      const options = optionsArr.length ? JSON.stringify(optionsArr) : null;
 
-      let product;
-      if (existing) {
-        product = await prisma.product.update({ where: { id: existing.id }, data: { ...pData, categories: { set: categoryConnections } } });
-      } else {
-        product = await prisma.product.create({ data: { ...pData, categories: { connect: categoryConnections } } });
+      const fieldErrors: any = {};
+      if (!isVariant && !name) fieldErrors.name = "Parent product requires a name";
+      
+      const warnings: any = {};
+      if (price === null) {
+        price = 0;
+        warnings.price = "Missing price set to 0. Please update.";
+      } else if (price < 0) {
+        fieldErrors.price = "Price cannot be negative";
       }
 
-      if (sku) wooSkuToProductId[sku] = product.id;
-      if (row['ID']) wooSkuToProductId[row['ID']?.toString().trim()] = product.id;
+      const status = Object.keys(fieldErrors).length > 0 ? 'INVALID' : 'VALID';
+      const finalErrors = { ...fieldErrors, ...warnings };
 
-      imported++;
-      await prisma.importLog.update({ where: { id: logId }, data: { imported, failed } });
+      batch.push({
+        importLogId: logId,
+        status,
+        name,
+        sku,
+        price,
+        comparePrice,
+        stock,
+        description,
+        categories,
+        images,
+        parentSku,
+        options,
+        errors: Object.keys(finalErrors).length > 0 ? finalErrors : null
+      });
+
+      if (batch.length >= BATCH_SIZE) {
+        await prisma.importStagingRow.createMany({ data: batch });
+        imported += batch.length;
+        await prisma.importLog.update({ where: { id: logId }, data: { imported } });
+        batch = [];
+      }
     } catch(e: any) {
       failed++;
-      errors.push(`Woo Parent error: ${e.message}`);
-      await prisma.importLog.update({ where: { id: logId }, data: { imported, failed, errors: errors.join('\n') } });
+      errors.push(`Row error: ${e.message}`);
     }
   }
 
-  for (const row of variants) {
-     try {
-       const parentRef = row['Parent']?.toString().trim();
-       let productId = parentRef ? wooSkuToProductId[parentRef] : null;
-       
-       if (!productId && parentRef) {
-         const p = await prisma.product.findFirst({ where: { sku: parentRef } });
-         if (p) productId = p.id;
-       }
-
-       if (!productId) continue;
-
-       const vSku = row['SKU']?.toString().trim() || null;
-       const vPrice = parseFloat(row['Regular price']) || 0;
-       const vSpecial = parseFloat(row['Sale price']) || null;
-       const vStock = parseInt(row['Stock']) || 0;
-       const vImage = row['Images']?.toString().split(',')[0]?.trim() || null;
-
-       const options: { name: string, value: string }[] = [];
-       for (let i = 1; i <= 5; i++) {
-         const optName = row[`Attribute ${i} name`]?.toString().trim();
-         const optVal = row[`Attribute ${i} value(s)`]?.toString().trim();
-         if (optName && optVal) options.push({ name: optName, value: optVal });
-       }
-
-       let existingVariant = null;
-        if (vSku) {
-          existingVariant = await prisma.productVariant.findFirst({ where: { sku: vSku } });
-        } else if (options.length > 0) {
-           const parentVariants = await prisma.productVariant.findMany({
-             where: { productId }, include: { attributes: true }
-           });
-           existingVariant = parentVariants.find(v => {
-             if (v.attributes.length !== options.length) return false;
-             return options.every(o => v.attributes.some(a => a.name.toLowerCase() === o.name.toLowerCase() && a.value.toLowerCase() === o.value.toLowerCase()));
-           });
-        }
-
-        const vData = {
-          productId,
-          sku: vSku,
-          price: vPrice,
-          specialPrice: vSpecial,
-          stock: vStock,
-          image: vImage,
-        };
-
-        let variant;
-        if (existingVariant) {
-           variant = await prisma.productVariant.update({ where: { id: existingVariant.id }, data: vData });
-        } else {
-           variant = await prisma.productVariant.create({ data: vData });
-        }
-
-        await prisma.variantAttribute.deleteMany({ where: { variantId: variant.id } });
-        for (const opt of options) {
-           await prisma.variantAttribute.create({ data: { variantId: variant.id, name: opt.name, value: opt.value } });
-        }
-     } catch (e: any) {
-        failed++;
-        errors.push(`Woo Variant error: ${e.message}`);
-        await prisma.importLog.update({ where: { id: logId }, data: { imported, failed, errors: errors.join('\n') } });
-     }
+  if (batch.length > 0) {
+    try {
+      await prisma.importStagingRow.createMany({ data: batch });
+      imported += batch.length;
+    } catch (e: any) {
+      failed += batch.length;
+      errors.push(`Final batch error: ${e.message}`);
+    }
   }
 
+  await prisma.importLog.update({ where: { id: logId }, data: { imported, failed, errors: errors.join('\n') } });
   return { imported, failed, errors };
 }
 

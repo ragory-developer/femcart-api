@@ -483,8 +483,41 @@ model ImportLog {
   finishedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  stagingRows   ImportStagingRow[]
 
   @@map("importlog")
+}
+
+model ImportStagingRow {
+  id            String    @id @default(cuid())
+  importLogId   String
+  status        String    @default("PENDING") // PENDING, VALID, INVALID, IMPORTED
+  
+  // Normalized Data Fields
+  name          String?
+  slug          String?
+  sku           String?
+  price         Float?
+  comparePrice  Float?
+  stock         Int?
+  description   String?   @db.Text
+  brandName     String?
+  categories    String?
+  images        String?   @db.LongText
+  parentSku     String?
+  options       String?   @db.Text
+  
+  // Error Tracking
+  errors        Json?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  importLog     ImportLog @relation(fields: [importLogId], references: [id], onDelete: Cascade)
+  
+  @@index([importLogId])
+  @@index([status])
+  @@map("importstagingrow")
 }
 
 model ImportTask {
