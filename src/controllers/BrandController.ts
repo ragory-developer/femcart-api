@@ -47,7 +47,10 @@ export class BrandController extends BaseController {
     const [brands, total] = await Promise.all([
       prisma.brand.findMany({
         where,
-        include: { _count: { select: { products: true } } },
+        include: { 
+          _count: { select: { products: true } },
+          products: { take: 1, select: { image: true } }
+        },
         orderBy: { name: 'asc' },
         skip,
         take: limit,

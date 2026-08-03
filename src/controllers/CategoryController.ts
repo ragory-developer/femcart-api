@@ -46,7 +46,8 @@ export class CategoryController extends BaseController {
             _count: { select: { products: true } }
           }
         }, 
-        _count: { select: { products: true } } 
+        _count: { select: { products: true } },
+        products: { take: 1, select: { image: true } }
       },
       where: { 
         parentId: null, 
