@@ -59,7 +59,7 @@ export async function sendFacebookEvent(options: FacebookCapiOptions) {
     const testEventCode = settingsMap.facebook_test_event_code;
 
     if (!accessToken || !pixelId) {
-      logger.debug('[FB-CAPI] Missing Facebook Conversions API access token or pixel ID. CAPI tracking is disabled.');
+      logger.warn('[FB-CAPI] Missing Facebook Conversions API access token or pixel ID. CAPI tracking is disabled.');
       return;
     }
 

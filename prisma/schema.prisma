@@ -159,6 +159,7 @@ model Product {
   soldIndividually    Boolean          @default(false)
   isVirtual           Boolean          @default(false)
   isDownloadable      Boolean          @default(false)
+  totalSales          Int              @default(0)
 
   orderItems          OrderItem[]
   brand               Brand?           @relation(fields: [brandId], references: [id])

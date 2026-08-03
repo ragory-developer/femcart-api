@@ -366,7 +366,7 @@ export class OrderController extends BaseController {
             }
             await tx.product.update({
               where: { id: item.productId },
-              data: { stock: { decrement: item.quantity } }
+              data: { stock: { decrement: item.quantity }, totalSales: { increment: item.quantity } }
             });
           } else {
             await tx.productVariant.update({
@@ -375,7 +375,7 @@ export class OrderController extends BaseController {
             });
             await tx.product.update({
               where: { id: item.productId },
-              data: { stock: { decrement: item.quantity } }
+              data: { stock: { decrement: item.quantity }, totalSales: { increment: item.quantity } }
             });
           }
         } else if (item.productId) {
@@ -388,7 +388,7 @@ export class OrderController extends BaseController {
                 id: item.productId,
                 stock: { gte: item.quantity }
               },
-              data: { stock: { decrement: item.quantity } }
+              data: { stock: { decrement: item.quantity }, totalSales: { increment: item.quantity } }
             });
             if (updated.count === 0) {
               throw new BadRequestError(`Not enough stock for product. Available: ${product.stock}`);
@@ -396,7 +396,7 @@ export class OrderController extends BaseController {
           } else {
             await tx.product.update({
               where: { id: item.productId },
-              data: { stock: { decrement: item.quantity } },
+              data: { stock: { decrement: item.quantity }, totalSales: { increment: item.quantity } },
             });
           }
         }

@@ -340,6 +340,8 @@ export class ProductController extends BaseController {
     if (sort === 'price_asc') orderBy = { price: 'asc' };
     else if (sort === 'price_desc') orderBy = { price: 'desc' };
     else if (sort === 'name') orderBy = { name: 'asc' };
+    else if (sort === 'best_selling') orderBy = { totalSales: 'desc' };
+    else if (sort === 'newest') orderBy = { createdAt: 'desc' };
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
