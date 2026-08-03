@@ -58,7 +58,7 @@ export async function importShopifyProducts(
   
   const BATCH_SIZE = 20;
   let batch: any[] = [];
-  const currentOptionNames: Record<string, { opt1?: string, opt2?: string, opt3?: string }> = {};
+  const productCache: Record<string, { opt1?: string, opt2?: string, opt3?: string, brand?: string, cats?: string }> = {};
 
   for (const row of rows) {
     try {
@@ -76,23 +76,29 @@ export async function importShopifyProducts(
       const stock = isNaN(stockVal) ? null : stockVal;
 
       const description = row['Body (HTML)']?.toString().trim();
-      const brandName = row['Vendor']?.toString().trim();
-      const categories = row['Custom Product Type']?.toString().trim() || row['Standardized Product Type']?.toString().trim();
+      let brandName = row['Vendor']?.toString().trim();
+      let categories = row['Type']?.toString().trim() || row['Custom Product Type']?.toString().trim() || row['Standardized Product Type']?.toString().trim() || row['Tags']?.toString().trim();
       const images = row['Image Src']?.toString().trim();
       const sku = row['Variant SKU']?.toString().trim();
 
-      if (handle && !currentOptionNames[handle]) {
-        currentOptionNames[handle] = {};
+      if (handle && !productCache[handle]) {
+        productCache[handle] = {};
       }
 
-      const opt1Name = row[`Option1 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt1 : undefined);
-      if (row[`Option1 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt1 = row[`Option1 Name`].toString().trim();
+      if (brandName && handle) productCache[handle].brand = brandName;
+      else if (!brandName && handle) brandName = productCache[handle].brand;
 
-      const opt2Name = row[`Option2 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt2 : undefined);
-      if (row[`Option2 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt2 = row[`Option2 Name`].toString().trim();
+      if (categories && handle) productCache[handle].cats = categories;
+      else if (!categories && handle) categories = productCache[handle].cats;
 
-      const opt3Name = row[`Option3 Name`]?.toString().trim() || (handle ? currentOptionNames[handle].opt3 : undefined);
-      if (row[`Option3 Name`]?.toString().trim() && handle) currentOptionNames[handle].opt3 = row[`Option3 Name`].toString().trim();
+      const opt1Name = row[`Option1 Name`]?.toString().trim() || (handle ? productCache[handle].opt1 : undefined);
+      if (row[`Option1 Name`]?.toString().trim() && handle) productCache[handle].opt1 = row[`Option1 Name`].toString().trim();
+
+      const opt2Name = row[`Option2 Name`]?.toString().trim() || (handle ? productCache[handle].opt2 : undefined);
+      if (row[`Option2 Name`]?.toString().trim() && handle) productCache[handle].opt2 = row[`Option2 Name`].toString().trim();
+
+      const opt3Name = row[`Option3 Name`]?.toString().trim() || (handle ? productCache[handle].opt3 : undefined);
+      if (row[`Option3 Name`]?.toString().trim() && handle) productCache[handle].opt3 = row[`Option3 Name`].toString().trim();
 
       const optionsArr = [];
       const opt1Val = row[`Option1 Value`]?.toString().trim();

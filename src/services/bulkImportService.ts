@@ -84,12 +84,23 @@ function parseSpecifications(raw: any): string | null {
 }
 
 async function getOrCreateBrand(name: string): Promise<string> {
-  const slug = slugify(name);
-  const brand = await prisma.brand.upsert({
-    where: { slug },
-    update: { name },
-    create: { name, slug },
+  let brand = await prisma.brand.findFirst({
+    where: { name }
   });
+
+  if (brand) return brand.id;
+
+  const baseSlug = slugify(name);
+  let slug = baseSlug;
+  let counter = 1;
+  while (await prisma.brand.findUnique({ where: { slug } })) {
+    slug = `${baseSlug}-${counter++}`;
+  }
+
+  brand = await prisma.brand.create({
+    data: { name, slug },
+  });
+  
   return brand.id;
 }
 
@@ -98,18 +109,25 @@ async function getOrCreateCategory(path: string): Promise<string> {
   if (parts.length === 0) return '';
 
   let parentId: string | null = null;
-  let fullPath = "";
   let lastCategoryId = "";
 
   for (const part of parts) {
-    fullPath = fullPath ? `${fullPath} ${part}` : part;
-    const slug = slugify(fullPath);
-    
-    const cat: any = await prisma.category.upsert({
-      where: { slug },
-      update: { name: part, parentId },
-      create: { name: part, slug, parentId },
+    let cat: any = await prisma.category.findFirst({
+      where: { name: part, parentId }
     });
+
+    if (!cat) {
+      const baseSlug = slugify(part);
+      let slug = baseSlug;
+      let counter = 1;
+      while (await prisma.category.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${counter++}`;
+      }
+
+      cat = await prisma.category.create({
+        data: { name: part, slug, parentId }
+      });
+    }
     
     parentId = cat.id;
     lastCategoryId = cat.id;
@@ -733,8 +751,10 @@ export async function commitStagingToProducts(logId: string, includeInvalid: boo
     data: { status: 'completed', imported: committed, failed, totalProducts: committed + failed } 
   });
   
-  // Invalidate product cache to reflect bulk imported products and variants immediately
+  // Invalidate product, category, and brand caches to reflect bulk imported data immediately
   await CacheService.incr(KeyFactory.productCacheVersion());
+  await CacheService.incr(KeyFactory.categoryCacheVersion());
+  await CacheService.incr(KeyFactory.brandCacheVersion());
 
   return { committed, failed };
 }
