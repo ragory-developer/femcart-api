@@ -20,7 +20,7 @@ export const createProductSchema = z.object({
   slug: z.string().optional().nullable(),
   sku: z.string().optional().nullable(),
   countryOfOrigin: z.string().optional().nullable(),
-  isHalal: z.boolean().optional().default(true),
+  isFemcart: z.boolean().optional().default(true),
   specifications: z.array(
     z.object({
       name: z.string().min(1, "Specification name required"),

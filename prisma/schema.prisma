@@ -123,7 +123,7 @@ model Product {
   unit                String           @default("piece")
   weight              String?
   featured            Boolean          @default(false)
-  isHalal             Boolean          @default(true)
+  isFemcart             Boolean          @default(true)
   countryOfOrigin     String?
   brandId             String?
   createdAt           DateTime         @default(now())

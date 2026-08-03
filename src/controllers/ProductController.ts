@@ -812,7 +812,7 @@ export class ProductController extends BaseController {
       name, description, shortDescription, price, specialPrice, specialPriceStart, specialPriceEnd, stock, image, images,
       unit, weight, featured, categoryIds, brandId, variants, tags, specifications, faqs, slug: customSlug,
       upsellProducts, upsellCategoryIds, downsellProducts, downsellCategoryIds, seoData,
-      sku, countryOfOrigin, isHalal
+      sku, countryOfOrigin, isFemcart
     } = req.body;
 
     let baseSlug = customSlug ? slugify(customSlug) : slugify(name);
@@ -856,7 +856,7 @@ export class ProductController extends BaseController {
       brandId: brandId || null,
       sku: sku || null,
       countryOfOrigin: countryOfOrigin || null,
-      isHalal: isHalal ?? true,
+      isFemcart: isFemcart ?? true,
       upsellProducts: normalizeJsonField(upsellProducts),
       upsellCategoryIds: normalizeJsonField(upsellCategoryIds),
       downsellProducts: normalizeJsonField(downsellProducts),
@@ -908,7 +908,7 @@ export class ProductController extends BaseController {
       name, description, shortDescription, price, specialPrice, specialPriceStart, specialPriceEnd, stock, image, images,
       unit, weight, featured, categoryIds, brandId, tags, productType, variants, slug: customSlug, specifications, faqs,
       upsellProducts, upsellCategoryIds, downsellProducts, downsellCategoryIds, seoData,
-      sku, countryOfOrigin, isHalal
+      sku, countryOfOrigin, isFemcart
     } = req.body;
 
     const data: any = {
@@ -917,7 +917,7 @@ export class ProductController extends BaseController {
       specialPriceEnd: specialPriceEnd ? new Date(specialPriceEnd) : null,
       sku: sku || null,
       countryOfOrigin: countryOfOrigin || null,
-      isHalal: isHalal ?? true,
+      isFemcart: isFemcart ?? true,
       stock, image,
       images: normalizeImages(images),
       unit, weight, featured, brandId,
