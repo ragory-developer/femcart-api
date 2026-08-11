@@ -29,7 +29,7 @@ export class CategoryController extends BaseController {
     
     // 2. Try to serve from cache
     const cachedData = await CacheService.get<any>(cacheKey);
-    if (cachedData) {
+    if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
       res.json({ success: true, data: cachedData });
       return;
     }

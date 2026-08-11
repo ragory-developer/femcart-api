@@ -104,12 +104,12 @@ async function getOrCreateBrand(name: string): Promise<string> {
   return brand.id;
 }
 
-async function getOrCreateCategory(path: string): Promise<string> {
+async function getOrCreateCategory(path: string): Promise<string[]> {
   const parts = path.split('>').map((p) => p.trim()).filter(Boolean);
-  if (parts.length === 0) return '';
+  if (parts.length === 0) return [];
 
   let parentId: string | null = null;
-  let lastCategoryId = "";
+  const categoryIds: string[] = [];
 
   for (const part of parts) {
     let cat: any = await prisma.category.findFirst({
@@ -130,10 +130,10 @@ async function getOrCreateCategory(path: string): Promise<string> {
     }
     
     parentId = cat.id;
-    lastCategoryId = cat.id;
+    categoryIds.push(cat.id);
   }
   
-  return lastCategoryId;
+  return categoryIds;
 }
 
 export function parseSpreadsheet(buffer: Buffer): any[] {
@@ -600,7 +600,12 @@ export async function commitStagingToProducts(logId: string, includeInvalid: boo
         if (row.categories) {
           const catNames = row.categories.split(',').filter(Boolean);
           for (const cat of catNames) {
-            categoryConnections.push({ id: await getOrCreateCategory(cat.trim()) });
+            const pathIds = await getOrCreateCategory(cat.trim());
+            for (const id of pathIds) {
+              if (!categoryConnections.find(c => c.id === id)) {
+                categoryConnections.push({ id });
+              }
+            }
           }
         }
 

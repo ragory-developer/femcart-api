@@ -72,6 +72,10 @@ export async function importCategories(setting: WCSetting): Promise<Map<number, 
 
         catCache.set(wc.id, category.id);
       }
+      
+      // Invalidate category cache so new categories show up in Admin immediately
+      await CacheService.incr(KeyFactory.categoryCacheVersion());
+      
       return catCache;
     } finally {
       // Keep result in catCache, but allow re-check promise if needed later 
@@ -403,8 +407,10 @@ export async function importProduct(
 
   logFn && logFn(`✅ Completed "${wcProduct.name}". Status: ${existing ? 'updated' : 'created'}`);
   
-  // Invalidate product cache
+  // Invalidate product, category, and brand cache
   await CacheService.incr(KeyFactory.productCacheVersion());
+  await CacheService.incr(KeyFactory.categoryCacheVersion());
+  await CacheService.incr(KeyFactory.brandCacheVersion());
   
   return existing ? 'updated' : 'created';
 }

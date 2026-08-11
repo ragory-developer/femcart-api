@@ -110,7 +110,7 @@ export class ProductController extends BaseController {
     
     // 2. Try to serve from cache
     const cachedData = await CacheService.get<any>(cacheKey);
-    if (cachedData) {
+    if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
       res.json({ success: true, data: cachedData });
       return;
     }
@@ -185,7 +185,7 @@ export class ProductController extends BaseController {
     
     // 2. Try to serve from cache
     const cachedData = await CacheService.get<any>(cacheKey);
-    if (cachedData) {
+    if (cachedData && cachedData.data && Array.isArray(cachedData.data) && cachedData.data.length > 0) {
       res.json({ success: true, data: cachedData.data, pagination: cachedData.pagination });
       return;
     }
