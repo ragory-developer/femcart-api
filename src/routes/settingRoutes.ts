@@ -56,4 +56,6 @@ router.post('/validate-sslcz', authenticate, requirePermission('SETTINGS'), cont
 router.post('/validate-nagad', authenticate, requirePermission('SETTINGS'), controller.validateNagad);
 router.post('/validate-bkash', authenticate, requirePermission('SETTINGS'), controller.validateBKash);
 
+router.delete('/clean/:type', authenticate, requirePermission('SETTINGS'), controller.cleanData);
+
 export default router;

@@ -156,4 +156,40 @@ export class SettingController extends BaseController {
     const isValid = await bkashService.validateKey(appKey, appSecret, username, password, isLive === 'true' || isLive === true);
     res.json({ success: true, valid: isValid });
   });
+
+  /** Danger Zone: Clean specific data */
+  cleanData = asyncHandler(async (req: Request, res: Response) => {
+    const { type } = req.params; // products, categories, brands, caches
+
+    try {
+      if (type === 'products') {
+        await prisma.$transaction([
+          prisma.productVariant.deleteMany({}),
+          prisma.product.deleteMany({})
+        ]);
+        await CacheService.incr(KeyFactory.productCacheVersion());
+      } else if (type === 'categories') {
+        await prisma.category.deleteMany({});
+        await CacheService.incr(KeyFactory.categoryCacheVersion());
+      } else if (type === 'brands') {
+        // Unlink from products first to avoid foreign key constraint errors
+        await prisma.product.updateMany({ data: { brandId: null } });
+        await prisma.brand.deleteMany({});
+        await CacheService.incr(KeyFactory.brandCacheVersion());
+      } else if (type === 'caches') {
+        await CacheService.incr(KeyFactory.productCacheVersion());
+        await CacheService.incr(KeyFactory.categoryCacheVersion());
+        await CacheService.incr(KeyFactory.brandCacheVersion());
+        await CacheService.del(KeyFactory.globalSettings());
+      } else {
+        return res.status(400).json({ success: false, message: 'Invalid clean type' });
+      }
+
+      res.json({ success: true, message: `${type} cleaned successfully` });
+    } catch (e: any) {
+      console.error(`Clean failed for ${type}:`, e);
+      res.status(500).json({ success: false, message: `Failed to clean ${type}` });
+    }
+  });
 }
+
