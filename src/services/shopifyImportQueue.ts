@@ -1,6 +1,8 @@
 import prisma from '../config/database';
 import { shopifyImportService } from './shopifyImportService';
 import { ShopifySetting, shopifyService } from './shopifyService';
+import { CacheService } from '../core/redis/CacheService';
+import { KeyFactory } from '../core/redis/KeyFactory';
 
 const runningTasks = new Set<string>();
 const cancelRequests = new Set<string>();
@@ -149,6 +151,12 @@ async function runTask(
     const paused = cancelRequests.has(task.id);
     const finalStatus = paused ? 'paused' : 'done';
     logFn(paused ? `⏸️ Task paused.` : `✅ Task complete! Imported: ${imported}, Failed: ${failed}`);
+
+    // Invalidate caches so new data appears instantly
+    await CacheService.incr(KeyFactory.productCacheVersion());
+    await CacheService.incr(KeyFactory.categoryCacheVersion());
+    await CacheService.incr(KeyFactory.brandCacheVersion());
+
 
     await prisma.importTask.update({
       where: { id: task.id },
