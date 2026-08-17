@@ -152,6 +152,8 @@ router.post('/', authenticate, requirePermission('PRODUCTS'), validate(createPro
  *         description: Product deleted
  */
 router.put('/:id', authenticate, requirePermission('PRODUCTS'), validate(updateProductSchema), controller.update);
+router.patch('/:id/stock', authenticate, requirePermission('PRODUCTS'), controller.adjustStock);
+router.patch('/:id/variants/:variantId', authenticate, requirePermission('PRODUCTS'), controller.updateVariant);
 router.delete('/:id', authenticate, requirePermission('PRODUCTS'), controller.delete);
 
 export default router;

@@ -836,6 +836,9 @@ export class ProductController extends BaseController {
       }
     }
     const hasVariants = Array.isArray(variants) && variants.length > 0;
+    const calculatedStock = hasVariants
+      ? variants.reduce((sum: number, v: any) => sum + (v.enabled !== false ? (Number(v.stock) || 0) : 0), 0)
+      : (stock !== undefined ? (Number(stock) || 0) : 0);
 
     const data: any = {
       name,
@@ -843,11 +846,11 @@ export class ProductController extends BaseController {
       productType: hasVariants ? 'VARIABLE' : 'SIMPLE',
       description,
       shortDescription,
-      price,
-      specialPrice,
+      price: Number(price) || 0,
+      specialPrice: specialPrice !== undefined && specialPrice !== null ? Number(specialPrice) : null,
       specialPriceStart: specialPriceStart ? new Date(specialPriceStart) : null,
       specialPriceEnd: specialPriceEnd ? new Date(specialPriceEnd) : null,
-      stock: hasVariants ? variants.reduce((sum: number, v: any) => sum + (v.enabled !== false ? (v.stock ?? 0) : 0), 0) : (stock ?? 0),
+      stock: calculatedStock,
       image,
       images: normalizeImages(images),
       unit,
@@ -869,11 +872,12 @@ export class ProductController extends BaseController {
       variants: hasVariants ? {
         create: variants.map((v: any, idx: number) => ({
           sku: v.sku || null,
-          price: v.price ?? price,
-          specialPrice: v.specialPrice ?? null,
+          price: v.price !== undefined ? Number(v.price) : Number(price) || 0,
+          specialPrice: v.specialPrice !== undefined && v.specialPrice !== null ? Number(v.specialPrice) : null,
           specialPriceStart: v.specialPriceStart ? new Date(v.specialPriceStart) : null,
           specialPriceEnd: v.specialPriceEnd ? new Date(v.specialPriceEnd) : null,
-          stock: v.stock ?? 0,
+          stock: Number(v.stock) || 0,
+          weight: v.weight || null,
           image: v.image || null,
           isDefault: v.isDefault ?? idx === 0,
           enabled: v.enabled ?? true,
@@ -911,17 +915,26 @@ export class ProductController extends BaseController {
       sku, countryOfOrigin, isFemcart
     } = req.body;
 
+    const hasVariants = Array.isArray(variants) && variants.length > 0;
+    const resolvedProductType = productType || (hasVariants ? 'VARIABLE' : undefined);
+
     const data: any = {
-      description, shortDescription, price, specialPrice,
-      specialPriceStart: specialPriceStart ? new Date(specialPriceStart) : null,
-      specialPriceEnd: specialPriceEnd ? new Date(specialPriceEnd) : null,
-      sku: sku || null,
-      countryOfOrigin: countryOfOrigin || null,
+      description,
+      shortDescription,
+      price: price !== undefined ? Number(price) : undefined,
+      specialPrice: specialPrice !== undefined ? (specialPrice !== null ? Number(specialPrice) : null) : undefined,
+      specialPriceStart: specialPriceStart !== undefined ? (specialPriceStart ? new Date(specialPriceStart) : null) : undefined,
+      specialPriceEnd: specialPriceEnd !== undefined ? (specialPriceEnd ? new Date(specialPriceEnd) : null) : undefined,
+      sku: sku !== undefined ? (sku || null) : undefined,
+      countryOfOrigin: countryOfOrigin !== undefined ? (countryOfOrigin || null) : undefined,
       isFemcart: isFemcart ?? true,
-      stock, image,
-      images: normalizeImages(images),
-      unit, weight, featured, brandId,
-      productType,
+      image,
+      images: images !== undefined ? normalizeImages(images) : undefined,
+      unit,
+      weight,
+      featured,
+      brandId,
+      productType: resolvedProductType,
       upsellProducts: upsellProducts !== undefined ? normalizeJsonField(upsellProducts) : undefined,
       upsellCategoryIds: upsellCategoryIds !== undefined ? normalizeJsonField(upsellCategoryIds) : undefined,
       downsellProducts: downsellProducts !== undefined ? normalizeJsonField(downsellProducts) : undefined,
@@ -932,6 +945,12 @@ export class ProductController extends BaseController {
       tags: tags ? { set: tags.map((id: string) => ({ id })) } : undefined,
       seoData: seoData !== undefined ? normalizeJsonField(seoData) : undefined,
     };
+
+    if (hasVariants) {
+      data.stock = variants.reduce((sum: number, v: any) => sum + (v.enabled !== false ? (Number(v.stock) || 0) : 0), 0);
+    } else if (stock !== undefined) {
+      data.stock = Number(stock) || 0;
+    }
     
     if (name || customSlug) {
       if (name) data.name = name;
@@ -961,25 +980,25 @@ export class ProductController extends BaseController {
     }
 
     if (variants && Array.isArray(variants)) {
-      if (productType === 'VARIABLE' || (!productType && data.productType === 'VARIABLE')) {
-        data.stock = variants.reduce((sum: number, v: any) => sum + (v.enabled !== false ? (v.stock ?? 0) : 0), 0);
-      }
       const incomingIds = variants.map((v: any) => v.id).filter(Boolean);
-      await prisma.productVariant.updateMany({
-        where: { productId: req.params.id as string, id: { notIn: incomingIds } },
-        data: { enabled: false }
-      });
+      if (incomingIds.length > 0) {
+        await prisma.productVariant.updateMany({
+          where: { productId: req.params.id as string, id: { notIn: incomingIds } },
+          data: { enabled: false }
+        });
+      }
 
       data.variants = {
         upsert: variants.map((v: any, idx: number) => ({
           where: { id: v.id || 'new_placeholder_' + idx },
           update: {
             sku: v.sku || null,
-            price: v.price ?? price,
-            specialPrice: v.specialPrice ?? null,
+            price: v.price !== undefined ? Number(v.price) : (price !== undefined ? Number(price) : 0),
+            specialPrice: v.specialPrice !== undefined && v.specialPrice !== null ? Number(v.specialPrice) : null,
             specialPriceStart: v.specialPriceStart ? new Date(v.specialPriceStart) : null,
             specialPriceEnd: v.specialPriceEnd ? new Date(v.specialPriceEnd) : null,
-            stock: v.stock ?? 0,
+            stock: Number(v.stock) || 0,
+            weight: v.weight || null,
             image: v.image || null,
             isDefault: v.isDefault ?? idx === 0,
             enabled: v.enabled ?? true,
@@ -990,11 +1009,12 @@ export class ProductController extends BaseController {
           },
           create: {
             sku: v.sku || null,
-            price: v.price ?? price,
-            specialPrice: v.specialPrice ?? null,
+            price: v.price !== undefined ? Number(v.price) : (price !== undefined ? Number(price) : 0),
+            specialPrice: v.specialPrice !== undefined && v.specialPrice !== null ? Number(v.specialPrice) : null,
             specialPriceStart: v.specialPriceStart ? new Date(v.specialPriceStart) : null,
             specialPriceEnd: v.specialPriceEnd ? new Date(v.specialPriceEnd) : null,
-            stock: v.stock ?? 0,
+            stock: Number(v.stock) || 0,
+            weight: v.weight || null,
             image: v.image || null,
             isDefault: v.isDefault ?? idx === 0,
             enabled: v.enabled ?? true,
@@ -1020,6 +1040,143 @@ export class ProductController extends BaseController {
     await CacheService.incr(KeyFactory.productCacheVersion());
 
     res.json({ success: true, data: product, debugData: data });
+  });
+
+  /** Admin: quick adjust stock for a product or its variants */
+  adjustStock = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const { stock, variantStockUpdates } = req.body;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: { variants: true },
+    });
+    if (!product) throw new NotFoundError('Product not found');
+
+    const hasVariants = product.productType === 'VARIABLE' || (product.variants && product.variants.length > 0);
+
+    if (hasVariants) {
+      if (Array.isArray(variantStockUpdates)) {
+        for (const u of variantStockUpdates) {
+          if (u.variantId) {
+            await prisma.productVariant.update({
+              where: { id: u.variantId },
+              data: { stock: Number(u.stock) || 0 },
+            });
+          }
+        }
+      }
+      const updatedVariants = await prisma.productVariant.findMany({
+        where: { productId: id, enabled: true },
+      });
+      const totalStock = updatedVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+      await prisma.product.update({
+        where: { id },
+        data: { stock: totalStock },
+      });
+    } else {
+      if (stock !== undefined) {
+        await prisma.product.update({
+          where: { id },
+          data: { stock: Number(stock) || 0 },
+        });
+      }
+    }
+
+    await CacheService.incr(KeyFactory.productCacheVersion());
+    res.json({ success: true, message: 'Stock updated successfully' });
+  });
+
+  /** Admin: update or create an individual variation directly */
+  updateVariant = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const variantId = req.params.variantId as string;
+    const data = req.body;
+
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [{ id }, { slug: id }],
+      },
+    });
+    if (!product) throw new NotFoundError('Product not found');
+    const realProductId = product.id;
+
+    const updateData: any = {};
+    if (data.sku !== undefined) updateData.sku = data.sku || null;
+    if (data.price !== undefined) updateData.price = Number(data.price) || 0;
+    if (data.specialPrice !== undefined) {
+      updateData.specialPrice = data.specialPrice !== null && !isNaN(parseFloat(data.specialPrice)) ? parseFloat(data.specialPrice) : null;
+    }
+    if (data.specialPriceStart !== undefined) {
+      updateData.specialPriceStart = data.specialPriceStart ? new Date(data.specialPriceStart) : null;
+    }
+    if (data.specialPriceEnd !== undefined) {
+      updateData.specialPriceEnd = data.specialPriceEnd ? new Date(data.specialPriceEnd) : null;
+    }
+    if (data.stock !== undefined) updateData.stock = parseInt(data.stock) || 0;
+    if (data.weight !== undefined) updateData.weight = data.weight || null;
+    if (data.image !== undefined) updateData.image = data.image || null;
+    if (data.isDefault !== undefined) updateData.isDefault = Boolean(data.isDefault);
+    if (data.enabled !== undefined) updateData.enabled = Boolean(data.enabled);
+
+    let targetVariant = null;
+    if (variantId && variantId !== 'new' && variantId !== 'undefined' && variantId !== 'null') {
+      targetVariant = await prisma.productVariant.findFirst({
+        where: {
+          id: variantId,
+          productId: realProductId,
+        },
+      });
+    }
+
+    let updatedOrCreated;
+    if (targetVariant) {
+      updatedOrCreated = await prisma.productVariant.update({
+        where: { id: targetVariant.id },
+        data: updateData,
+      });
+    } else {
+      const attrs = Array.isArray(data.attributes) ? data.attributes : [];
+      updatedOrCreated = await prisma.productVariant.create({
+        data: {
+          ...updateData,
+          productId: realProductId,
+          attributes: {
+            create: attrs.filter((a: any) => a.name && a.value).map((a: any) => ({
+              name: a.name,
+              value: a.value,
+            })),
+          },
+        },
+      });
+    }
+
+    // If marked as default, unset isDefault on other variants
+    if (data.isDefault) {
+      await prisma.productVariant.updateMany({
+        where: {
+          productId: realProductId,
+          id: { not: updatedOrCreated.id },
+        },
+        data: { isDefault: false },
+      });
+    }
+
+    // Recalculate parent product total stock and ensure productType is VARIABLE
+    const allVariants = await prisma.productVariant.findMany({
+      where: { productId: realProductId, enabled: true },
+    });
+    const totalStock = allVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    await prisma.product.update({
+      where: { id: realProductId },
+      data: {
+        stock: totalStock,
+        productType: 'VARIABLE',
+      },
+    });
+
+    await CacheService.incr(KeyFactory.productCacheVersion());
+    res.json({ success: true, data: updatedOrCreated, message: 'Variation saved successfully' });
   });
 
   /** Admin: delete a product */
