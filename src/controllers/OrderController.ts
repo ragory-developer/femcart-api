@@ -224,6 +224,18 @@ export class OrderController extends BaseController {
 
   /** Place a new order from the user's cart */
   create = asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Verify that checkout flow is globally enabled
+    const checkoutEnabled = await getSettingBool('enable_checkout_flow', true);
+    if (!checkoutEnabled) {
+      const customMessageSetting = await prisma.setting.findUnique({
+        where: { key: 'checkout_disabled_message' },
+      });
+      const message =
+        customMessageSetting?.value ||
+        'Online checkout is currently disabled. Please contact support or try again later.';
+      throw new BadRequestError(message);
+    }
+
     let userId = req.user?.userId;
     const { 
       deliveryAddress, deliveryCity, deliveryArea, deliveryCityId, deliveryAreaId, 
