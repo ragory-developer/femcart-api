@@ -1,52 +1,88 @@
 import { redis } from './RedisManager';
 import logger from '../../utils/logger';
 
-// L1 In-Memory Cache to minimize remote Redis round-trip times during a request lifecycle
+// In-Memory cache map (L1) with TTL support - operates seamlessly even if Redis is disabled or offline
 const memoryCache = new Map<string, { value: any; expiry: number }>();
+const MAX_MEMORY_ITEMS = 3000;
+
+function cleanupMemoryCache() {
+  if (memoryCache.size > MAX_MEMORY_ITEMS) {
+    const now = Date.now();
+    for (const [k, v] of memoryCache.entries()) {
+      if (v.expiry <= now) {
+        memoryCache.delete(k);
+      }
+    }
+    // If still oversized, delete oldest 20%
+    if (memoryCache.size > MAX_MEMORY_ITEMS) {
+      let count = 0;
+      for (const k of memoryCache.keys()) {
+        memoryCache.delete(k);
+        count++;
+        if (count > MAX_MEMORY_ITEMS * 0.2) break;
+      }
+    }
+  }
+}
 
 export const CacheService = {
-  /**
-   * Get a parsed JSON value from Redis or L1 memory cache.
-   * Returns null if cache miss or connection error (fail-open).
-   */
-  async get<T>(key: string): Promise<T | null> {
-    // 1. Check L1 Memory Cache first
-    const cachedLocal = memoryCache.get(key);
-    if (cachedLocal && cachedLocal.expiry > Date.now()) {
-      return cachedLocal.value as T;
-    }
+  clearMemory() {
+    memoryCache.clear();
+  },
 
-    // 2. Fail-open immediately if Redis client is not ready (prevents connection hangs)
-    if (redis.status !== 'ready') {
-      return null;
-    }
-
+  async flushAll(): Promise<void> {
+    memoryCache.clear();
+    if (process.env.REDIS_ENABLED === 'false' || redis?.status !== 'ready') return;
     try {
-      const data = await redis.get(key);
-      if (!data) return null;
-      const parsed = JSON.parse(data) as T;
-
-      // Store in L1 cache for 10 seconds to avoid repeating remote round-trips for consecutive requests
-      memoryCache.set(key, { value: parsed, expiry: Date.now() + 10000 });
-
-      return parsed;
+      await redis.flushdb();
     } catch (error) {
-      logger.error(`Cache GET Error for key ${key}:`, error);
-      return null;
+      logger.error('Cache FLUSHDB Error:', error);
     }
   },
 
   /**
-   * Set a JSON value in Redis and update L1 memory cache.
+   * Get a parsed JSON value from L1 in-memory cache or Redis.
+   * Returns null if cache miss or connection error (fail-open).
+   */
+  async get<T>(key: string): Promise<T | null> {
+    // 1. Check L1 Memory Cache first (sub-millisecond instant lookup)
+    const cachedLocal = memoryCache.get(key);
+    if (cachedLocal) {
+      if (cachedLocal.expiry > Date.now()) {
+        return cachedLocal.value as T;
+      }
+      memoryCache.delete(key);
+    }
+
+    // 2. If Redis is ready, query Redis
+    if (process.env.REDIS_ENABLED !== 'false' && redis?.status === 'ready') {
+      try {
+        const data = await redis.get(key);
+        if (!data) return null;
+        const parsed = JSON.parse(data) as T;
+
+        // Store back in L1 memory cache for 60 seconds
+        memoryCache.set(key, { value: parsed, expiry: Date.now() + 60000 });
+        return parsed;
+      } catch (error) {
+        logger.error(`Cache GET Error for key ${key}:`, error);
+        return null;
+      }
+    }
+
+    return null;
+  },
+
+  /**
+   * Set a JSON value in L1 memory cache and Redis.
    * Defaults to 3600 seconds (1 hour) if not specified.
    */
   async set(key: string, value: any, ttlSeconds: number = 3600): Promise<void> {
-    const expiry = Date.now() + 10000; // 10 seconds for L1 memory
+    cleanupMemoryCache();
+    const expiry = Date.now() + (ttlSeconds * 1000);
     memoryCache.set(key, { value, expiry });
 
-    if (redis.status !== 'ready') {
-      return;
-    }
+    if (process.env.REDIS_ENABLED === 'false' || redis?.status !== 'ready') return;
 
     try {
       const data = JSON.stringify(value);
@@ -57,14 +93,12 @@ export const CacheService = {
   },
 
   /**
-   * Delete a key from Redis and L1 memory cache.
+   * Delete a key from L1 memory cache and Redis.
    */
   async del(key: string): Promise<void> {
     memoryCache.delete(key);
 
-    if (redis.status !== 'ready') {
-      return;
-    }
+    if (process.env.REDIS_ENABLED === 'false' || redis?.status !== 'ready') return;
 
     try {
       await redis.del(key);
@@ -74,21 +108,26 @@ export const CacheService = {
   },
 
   /**
-   * Increment a key's value.
-   * Returns the new value, or 0 if it fails (fail-open).
+   * Increment a key's value in memory and Redis.
+   * Returns the new value.
    */
   async incr(key: string): Promise<number> {
-    memoryCache.delete(key);
+    const current = memoryCache.get(key);
+    const currentVal = typeof current?.value === 'number' ? current.value : (parseInt(String(current?.value || '0'), 10) || 0);
+    const newVal = currentVal + 1;
+    memoryCache.set(key, { value: newVal, expiry: Date.now() + 86400000 }); // 24h
 
-    if (redis.status !== 'ready') {
-      return 0;
+    if (process.env.REDIS_ENABLED === 'false' || redis?.status !== 'ready') {
+      return newVal;
     }
 
     try {
-      return await redis.incr(key);
+      const redisVal = await redis.incr(key);
+      memoryCache.set(key, { value: redisVal, expiry: Date.now() + 86400000 });
+      return redisVal;
     } catch (error) {
       logger.error(`Cache INCR Error for key ${key}:`, error);
-      return 0;
+      return newVal;
     }
   }
 };

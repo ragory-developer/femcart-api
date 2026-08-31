@@ -173,6 +173,7 @@ model Product {
   @@index([brandId])
   @@index([name])
   @@index([externalId])
+  @@index([sku])
   @@map("product")
 }
 
@@ -938,3 +939,47 @@ model ShopifySetting {
   
   @@map("shopify_setting")
 }
+
+enum ApiKeyStatus {
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  name           String
+  consumerKey    String       @unique
+  consumerSecret String?
+  status         ApiKeyStatus @default(ACTIVE)
+  allowedDomain  String?      @default("*")
+  authMode       String       @default("SINGLE_KEY") // "SINGLE_KEY" or "DUAL_KEY"
+  permissions    String       @default("all")
+  webhookUrl     String?
+  webhookSecret  String?
+  lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([consumerKey])
+  @@index([status])
+  @@map("apikey")
+}
+
+model InviSyncLog {
+  id           String    @id @default(cuid())
+  type         String    // "INBOUND_STOCK", "OUTBOUND_ORDER", "WEBHOOK"
+  status       String    // "SUCCESS", "FAILED", "PARTIAL"
+  itemsCount   Int       @default(0)
+  requestBody  Json?
+  responseBody Json?
+  errorMessage String?   @db.Text
+  durationMs   Int?
+  createdAt    DateTime  @default(now())
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("invisynclog")
+}
+

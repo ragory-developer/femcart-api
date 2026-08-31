@@ -34,6 +34,8 @@ import shopifyRoutes from './shopifyRoutes';
 import bulkImportRoutes from './bulkImportRoutes';
 import telemetryRoutes from './telemetryRoutes';
 import searchRoutes from './searchRoutes';
+import posRoutes from './posRoutes';
+import inviWebhookRoutes from './inviWebhookRoutes';
 import { authenticate, authorize } from '../middleware/auth';
 import { catalogIntegrityService } from '../services/CatalogIntegrityService';
 
@@ -74,6 +76,8 @@ router.use('/facebook-ads', facebookAdsRoutes);
 router.use('/contact', contactRoutes);
 router.use('/sms', smsRoutes);
 router.use('/telemetry', telemetryRoutes);
+router.use('/invi-pos', posRoutes);
+router.use('/invi-webhook', inviWebhookRoutes);
 
 router.get('/admin/catalog/integrity', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), async (_req, res, next) => {
   try {
