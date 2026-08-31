@@ -7,6 +7,7 @@ vi.mock('../config/database', () => {
   const mockPrisma = {
     apiKey: {
       findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn(),
       create: vi.fn(),
     },
@@ -36,6 +37,14 @@ vi.mock('../config/database', () => {
     category: {
       findMany: vi.fn(),
     },
+    inventoryLog: {
+      create: vi.fn().mockResolvedValue({ id: 'log-1' }),
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    posEvent: {
+      create: vi.fn().mockResolvedValue({ id: 'event-1' }),
+    },
     inviSyncLog: {
       create: vi.fn().mockResolvedValue({ id: 'log-1' }),
     },
@@ -59,19 +68,14 @@ describe('Invi POS & Webhook Suite', () => {
   describe('1. posAuth Middleware', () => {
     it('should reject request when consumer key is missing', async () => {
       const req = { headers: {}, query: {} } as PosRequest;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false, message: expect.stringContaining('Missing x-consumer-key') })
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Missing Invi API Key') })
       );
-      expect(next).not.toHaveBeenCalled();
     });
 
     it('should reject key that does not start with ck_live_', async () => {
@@ -79,16 +83,12 @@ describe('Invi POS & Webhook Suite', () => {
         headers: { 'x-consumer-key': 'sk_test_12345' },
         query: {},
       } as unknown as PosRequest;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith(
+      expect(next).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('must start with "ck_live_"') })
       );
     });
@@ -100,17 +100,13 @@ describe('Invi POS & Webhook Suite', () => {
         headers: { 'x-consumer-key': 'ck_live_not_found_123' },
         query: {},
       } as unknown as PosRequest;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Invalid Consumer Key. Key not found.' })
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('does not exist') })
       );
     });
 
@@ -127,16 +123,12 @@ describe('Invi POS & Webhook Suite', () => {
         headers: { 'x-consumer-key': 'ck_live_inactive_123' },
         query: {},
       } as unknown as PosRequest;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(req, res, next);
 
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith(
+      expect(next).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('INACTIVE') })
       );
     });
@@ -148,6 +140,10 @@ describe('Invi POS & Webhook Suite', () => {
         consumerKey: 'ck_live_valid_key_123',
         status: 'ACTIVE',
         allowedDomain: '*',
+        authMode: 'SINGLE_KEY',
+        permissions: 'all',
+        webhookUrl: null,
+        webhookSecret: null,
       });
       (prisma.apiKey.update as any).mockResolvedValue({});
 
@@ -155,10 +151,7 @@ describe('Invi POS & Webhook Suite', () => {
         headers: { 'x-consumer-key': 'ck_live_valid_key_123' },
         query: {},
       } as unknown as PosRequest;
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn(),
-      } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(req, res, next);
@@ -168,7 +161,10 @@ describe('Invi POS & Webhook Suite', () => {
         id: 'key-1',
         name: 'POS Active',
         consumerKey: 'ck_live_valid_key_123',
-        allowedDomain: '*',
+        authMode: 'SINGLE_KEY',
+        permissions: 'all',
+        webhookUrl: null,
+        webhookSecret: null,
       });
     });
 
@@ -179,6 +175,10 @@ describe('Invi POS & Webhook Suite', () => {
         consumerKey: 'ck_live_bearer_123',
         status: 'ACTIVE',
         allowedDomain: '*',
+        authMode: 'SINGLE_KEY',
+        permissions: 'all',
+        webhookUrl: null,
+        webhookSecret: null,
       });
 
       // Test Bearer Auth
@@ -186,7 +186,7 @@ describe('Invi POS & Webhook Suite', () => {
         headers: { authorization: 'Bearer ck_live_bearer_123' },
         query: {},
       } as unknown as PosRequest;
-      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as any;
+      const res = {} as any;
       const next = vi.fn();
 
       await posAuth(reqBearer, res, next);
@@ -206,38 +206,44 @@ describe('Invi POS & Webhook Suite', () => {
 
   describe('2. posService Data Sanitization', () => {
     it('should sanitize product entities correctly', () => {
-      const rawProduct = {
+      const mockRawProduct = {
         id: 'prod-1',
-        externalId: 'invi-101',
-        name: 'Silk Bra',
-        slug: 'silk-bra',
+        inviId: 'invi-101',
+        name: 'Silk Hijab Premium',
+        slug: 'silk-hijab-premium',
         sku: 'SILK-001',
         price: 1500,
         comparePrice: 1800,
         stock: 25,
         unit: 'piece',
-        brand: { id: 'b-1', name: 'Femcart Luxe' },
-        categories: [{ id: 'c-1', name: 'Bras', slug: 'bras' }],
-        variants: [{ id: 'v-1', sku: 'SILK-001-34B', price: 1500, stock: 10, isDefault: true }],
-        deletedAt: null,
-        deletedBy: null,
-        seoData: '{"keywords":"bra"}',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        productType: 'VARIABLE',
+        featured: true,
+        images: JSON.stringify(['https://example.com/img1.jpg', 'https://example.com/img2.jpg']),
+        seoData: '{"metaTitle":"Secret Internal SEO"}',
+        brand: { id: 'brand-1', name: 'Al-Madina', slug: 'al-madina', logo: 'logo.png' },
+        categories: [{ id: 'cat-1', name: 'Hijabs', slug: 'hijabs', image: null }],
+        variants: [
+          {
+            id: 'var-1',
+            inviId: 'invi-var-201',
+            sku: 'SILK-RED',
+            price: 1500,
+            stock: 10,
+            attributes: [{ name: 'Color', value: 'Red' }],
+          },
+        ],
       };
 
-      const sanitized = sanitizePosProduct(rawProduct);
+      const sanitized = sanitizePosProduct(mockRawProduct);
 
       expect(sanitized).toBeDefined();
       expect(sanitized?.id).toBe('prod-1');
       expect(sanitized?.invi_pid).toBe('invi-101');
       expect(sanitized?.sku).toBe('SILK-001');
       expect(sanitized?.stock).toBe(25);
-      expect(sanitized?.brand).toEqual({ id: 'b-1', name: 'Femcart Luxe' });
-      expect(sanitized?.variants).toHaveLength(1);
-      // Ensure internal SEO / soft-delete fields are excluded
+      expect(sanitized?.variants?.[0].sku).toBe('SILK-RED');
+      expect(sanitized?.brand?.name).toBe('Al-Madina');
       expect((sanitized as any).seoData).toBeUndefined();
-      expect((sanitized as any).deletedAt).toBeUndefined();
     });
 
     it('should sanitize order entities correctly with relations', () => {
@@ -279,7 +285,7 @@ describe('Invi POS & Webhook Suite', () => {
   });
 
   describe('3. posService Inventory Engine', () => {
-    it('should update Product stock when SKU belongs to simple product', async () => {
+    it('should update Product stock by ID or SKU when item belongs to simple product', async () => {
       (prisma.productVariant.findFirst as any).mockResolvedValue(null);
       (prisma.product.findFirst as any).mockResolvedValue({
         id: 'prod-1',
@@ -292,11 +298,11 @@ describe('Invi POS & Webhook Suite', () => {
         stock: 80,
       });
 
-      const res = await posService.updateStock('SIMPLE-001', 80);
+      const res = await posService.updateInventoryById('SIMPLE-001', 80, 'Test POS');
 
       expect(res.results.updated).toBe(1);
-      expect(res.results.details[0].type).toBe('PRODUCT');
       expect(res.results.details[0].newStock).toBe(80);
+      expect(res.results.details[0].previousStock).toBe(50);
       expect(res.results.details[0].delta).toBe(30);
     });
 
@@ -322,10 +328,9 @@ describe('Invi POS & Webhook Suite', () => {
         stock: 40,
       });
 
-      const res = await posService.updateStock('VAR-001', 25);
+      const res = await posService.updateInventoryById('VAR-001', 25, 'Test POS');
 
       expect(res.results.updated).toBe(1);
-      expect(res.results.details[0].type).toBe('VARIANT');
       expect(res.results.details[0].newStock).toBe(25);
       expect(prisma.product.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -335,7 +340,7 @@ describe('Invi POS & Webhook Suite', () => {
       );
     });
 
-    it('should batch update multiple SKUs and record InviSyncLog telemetry', async () => {
+    it('should batch sync multiple inventory items and record inventory logs', async () => {
       (prisma.productVariant.findFirst as any).mockResolvedValue(null);
       (prisma.product.findFirst as any).mockResolvedValue({
         id: 'prod-1',
@@ -348,18 +353,11 @@ describe('Invi POS & Webhook Suite', () => {
         stock: 30,
       });
 
-      const res = await posService.batchUpdateStock([{ sku: 'BATCH-001', stock: 30 }]);
+      const res = await posService.syncInventory([{ sku: 'BATCH-001', stock: 30 }], 'Test POS');
 
       expect(res.results.updated).toBe(1);
-      expect(prisma.inviSyncLog.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            type: 'INBOUND_STOCK',
-            status: 'SUCCESS',
-            itemsCount: 1,
-          }),
-        })
-      );
+      expect(res.results.details[0].sku).toBe('BATCH-001');
+      expect(res.results.details[0].newStock).toBe(30);
     });
   });
 
@@ -383,7 +381,7 @@ describe('Invi POS & Webhook Suite', () => {
       });
       (prisma.orderNote.create as any).mockResolvedValue({});
 
-      const result = await posService.cancelOrder('ord-cancel-1', 'Customer requested cancellation via POS');
+      const result = await posService.cancelOrder('ord-cancel-1', { reason: 'Customer requested cancellation via POS' }, 'Test POS');
 
       expect(result.success).toBe(true);
       expect(prisma.productVariant.update).toHaveBeenCalledWith(

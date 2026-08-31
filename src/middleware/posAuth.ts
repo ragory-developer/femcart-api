@@ -1,124 +1,151 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import prisma from '../config/database';
+import { config } from '../config';
+import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 
 export interface PosRequest extends Request {
   pos?: {
     id: string;
     name: string;
     consumerKey: string;
-    allowedDomain: string | null;
+    authMode: string;
+    permissions: string;
+    webhookUrl: string | null;
+    webhookSecret: string | null;
   };
 }
 
-// In-memory caching layer for active keys to minimize DB overhead on high-frequency barcode scans
-interface CachedApiKey {
-  id: string;
-  name: string;
-  consumerKey: string;
-  status: string;
-  allowedDomain: string | null;
-  cachedAt: number;
-  lastUsedUpdated: number;
-}
+/**
+ * Validates Invi/POS requests using Single Consumer Key:
+ *  - Header: x-consumer-key, x-api-key, or Authorization: Bearer <key>
+ *  - Query: ?consumer_key=... or ?api_key=...
+ */
+export const posAuth = async (req: PosRequest, _res: Response, next: NextFunction) => {
+  let consumerKey: string | undefined;
+  let isAdminAuthenticated = false;
 
-const keyCache = new Map<string, CachedApiKey>();
-const CACHE_TTL_MS = 60 * 1000; // 1 minute cache TTL
-const LAST_USED_DEBOUNCE_MS = 5 * 60 * 1000; // Update DB lastUsedAt at most once every 5 minutes
+  // 1. Check HTTP Headers (x-consumer-key, consumer-key, x-api-key, api-key)
+  const headerKey = (req.headers['x-consumer-key'] || req.headers['consumer-key'] || req.headers['x-api-key'] || req.headers['api-key']) as string;
+  if (headerKey) consumerKey = headerKey.trim();
 
-export const posAuth = async (req: PosRequest, res: Response, next: NextFunction) => {
+  // 2. Check Authorization: Bearer <token> (Can be consumer key starting with ck_live_ OR Admin JWT)
+  if (!consumerKey && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    const bearerToken = req.headers.authorization.substring(7).trim();
+    if (bearerToken.startsWith('ck_live_')) {
+      consumerKey = bearerToken;
+    } else {
+      // Test if it's an Admin JWT
+      try {
+        const decoded = jwt.verify(bearerToken, config.jwt.accessSecret) as { userId: string; role: string };
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          select: { id: true, role: true }
+        });
+        if (user && (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN')) {
+          isAdminAuthenticated = true;
+          return next();
+        }
+      } catch {
+        // Not a valid admin token, proceed
+      }
+    }
+  }
+
+  // 3. Check Query Parameters (?consumer_key=... or ?api_key=...)
+  if (!consumerKey && (req.query.consumer_key || req.query.api_key)) {
+    consumerKey = ((req.query.consumer_key || req.query.api_key) as string).trim();
+  }
+
+  if (!consumerKey) {
+    return next(
+      new UnauthorizedError(
+        'Missing Invi API Key. Provide x-consumer-key header, x-api-key header, or ?consumer_key query parameter.'
+      )
+    );
+  }
+
+  // Basic format validation
+  if (!consumerKey.startsWith('ck_live_')) {
+    return next(
+      new UnauthorizedError('Invalid key format. Consumer key must start with "ck_live_".')
+    );
+  }
+
   try {
-    let consumerKey = (
-      req.headers['x-consumer-key'] ||
-      req.headers['consumer-key'] ||
-      req.headers['x-api-key'] ||
-      req.query.consumer_key ||
-      req.query.api_key
-    ) as string | undefined;
-
-    if (!consumerKey && req.headers.authorization?.startsWith('Bearer ck_live_')) {
-      consumerKey = req.headers.authorization.substring(7).trim();
-    }
-
-    if (!consumerKey) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized: Missing x-consumer-key header or ?consumer_key query parameter.'
-      });
-    }
-
-    consumerKey = String(consumerKey).trim();
-
-    if (!consumerKey.startsWith('ck_live_')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid key format. Consumer key must start with "ck_live_".'
-      });
-    }
-
-    const now = Date.now();
-    let cached = keyCache.get(consumerKey);
-
-    let apiKey = cached && (now - cached.cachedAt < CACHE_TTL_MS) ? cached : null;
+    const apiKey = await prisma.apiKey.findUnique({
+      where: { consumerKey }
+    });
 
     if (!apiKey) {
-      const dbKey = await prisma.apiKey.findUnique({
-        where: { consumerKey }
-      });
-
-      if (!dbKey) {
-        keyCache.delete(consumerKey);
-        return res.status(401).json({ success: false, message: 'Invalid Consumer Key. Key not found.' });
-      }
-
-      cached = {
-        id: dbKey.id,
-        name: dbKey.name,
-        consumerKey: dbKey.consumerKey,
-        status: dbKey.status,
-        allowedDomain: dbKey.allowedDomain,
-        cachedAt: now,
-        lastUsedUpdated: cached?.lastUsedUpdated || 0
-      };
-      keyCache.set(consumerKey, cached);
-      apiKey = cached;
+      return next(new UnauthorizedError('Invalid Consumer Key. Key does not exist.'));
     }
 
+    // Check status
     if (apiKey.status !== 'ACTIVE') {
-      return res.status(403).json({
-        success: false,
-        message: `Invi connection is currently ${apiKey.status}. Must be set to ACTIVE.`
-      });
+      return next(
+        new ForbiddenError(
+          `Invi connection is currently ${apiKey.status}. An admin must set it to ACTIVE in Admin Settings.`
+        )
+      );
     }
 
-    // Domain Whitelisting Check (Optional)
-    if (apiKey.allowedDomain && apiKey.allowedDomain !== '*' && apiKey.allowedDomain.trim() !== '') {
-      const allowedHosts = apiKey.allowedDomain.toLowerCase().split(',').map(d => d.trim());
-      const incomingHost = (
-        (req.headers.origin as string) ||
-        (req.headers.host as string) ||
-        ''
-      ).toLowerCase();
+    // Domain & Origin Whitelisting Verification (skipped for admin dashboard ping)
+    if (!isAdminAuthenticated && apiKey.allowedDomain && apiKey.allowedDomain.trim() !== '' && apiKey.allowedDomain !== '*') {
+      const allowedList = apiKey.allowedDomain
+        .toLowerCase()
+        .split(',')
+        .map((d: string) => d.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').split(':')[0]);
 
-      const isAllowed = allowedHosts.some(host => incomingHost.includes(host));
-      if (!isAllowed) {
-        return res.status(403).json({ success: false, message: 'Forbidden: Origin domain not whitelisted.' });
+      // Extract client domain / origin / IP
+      const originHeader = (req.headers['origin'] || req.headers['referer']) as string | undefined;
+      const hostHeader = (req.headers['x-forwarded-host'] || req.headers['host']) as string | undefined;
+      const clientIp = (req.headers['x-forwarded-for'] as string || req.ip || req.socket.remoteAddress || '')
+        .split(',')[0].trim().replace(/^::ffff:/, '');
+
+      let requestHost = '';
+      if (originHeader) {
+        try {
+          requestHost = new URL(originHeader).hostname.toLowerCase();
+        } catch {
+          requestHost = originHeader.replace(/^https?:\/\//, '').replace(/\/.*$/, '').split(':')[0].toLowerCase();
+        }
+      } else if (hostHeader) {
+        requestHost = hostHeader.split(':')[0].toLowerCase();
+      }
+
+      const isDomainAllowed = allowedList.some((allowed) => {
+        if (allowed === '*' || allowed === '') return true;
+        if (requestHost === allowed) return true;
+        if (clientIp === allowed) return true;
+        if (allowed.startsWith('*.') && requestHost.endsWith(allowed.slice(2))) return true;
+        return false;
+      });
+
+      if (!isDomainAllowed) {
+        return next(
+          new ForbiddenError(
+            `Access Denied: Request domain/host (${requestHost || clientIp || 'unknown'}) is not in the allowed domain whitelist for this Invi key.`
+          )
+        );
       }
     }
 
-    // Debounced update of lastUsedAt timestamp in background
-    if (cached && (now - cached.lastUsedUpdated > LAST_USED_DEBOUNCE_MS)) {
-      cached.lastUsedUpdated = now;
-      prisma.apiKey.update({
-        where: { id: apiKey.id },
-        data: { lastUsedAt: new Date() }
-      }).catch(() => {});
-    }
+    // Update lastUsedAt asynchronously
+    prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsedAt: new Date() }
+    }).catch(() => { });
 
     req.pos = {
       id: apiKey.id,
       name: apiKey.name,
       consumerKey: apiKey.consumerKey,
-      allowedDomain: apiKey.allowedDomain
+      authMode: apiKey.authMode,
+      permissions: apiKey.permissions,
+      webhookUrl: apiKey.webhookUrl,
+      webhookSecret: apiKey.webhookSecret
     };
 
     next();

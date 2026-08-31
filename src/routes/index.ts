@@ -35,6 +35,8 @@ import bulkImportRoutes from './bulkImportRoutes';
 import telemetryRoutes from './telemetryRoutes';
 import searchRoutes from './searchRoutes';
 import posRoutes from './posRoutes';
+import apiKeyRoutes from './apiKeyRoutes';
+import posRemoteImportRoutes from './posRemoteImportRoutes';
 import inviWebhookRoutes from './inviWebhookRoutes';
 import { authenticate, authorize } from '../middleware/auth';
 import { catalogIntegrityService } from '../services/CatalogIntegrityService';
@@ -76,8 +78,28 @@ router.use('/facebook-ads', facebookAdsRoutes);
 router.use('/contact', contactRoutes);
 router.use('/sms', smsRoutes);
 router.use('/telemetry', telemetryRoutes);
-router.use('/invi-pos', posRoutes);
-router.use('/invi-webhook', inviWebhookRoutes);
+
+// Invi POS Inbound Webhook Routes (Secret verified from database settings or x-invi-signature)
+router.use('/webhooks/invi', inviWebhookRoutes);
+router.use('/webhook/invi', inviWebhookRoutes);
+router.use('/webhooks', inviWebhookRoutes);
+router.use('/webhook', inviWebhookRoutes);
+router.use('/invi/v1', inviWebhookRoutes);
+router.use('/invi-pos', inviWebhookRoutes);
+router.use('/ecom', inviWebhookRoutes);
+router.use('/pos', inviWebhookRoutes);
+
+// Invi POS Integration Strict Routes (Primary: /invi-pos/*, Ecom Alias: /ecom/*, Versioned: /invi/v1/*, Legacy: /pos/v1/*)
+router.use('/invi-pos', posRoutes);                      // Primary INVI POS API: /api/invi-pos/*
+router.use('/ecom', posRoutes);                          // Native INVI E-Commerce API: /api/ecom/*
+router.use('/invi/v1', posRoutes);                       // Versioned Inbound Invi API: /api/invi/v1/*
+router.use('/pos/v1', posRoutes);                        // Backward-compatible POS API: /api/pos/v1/*
+router.use('/pos', posRoutes);                           // POS API Alias: /api/pos/*
+router.use('/admin/invi-connections', apiKeyRoutes);     // Admin API: Key generation & Whitelisting
+router.use('/admin/pos-connections', apiKeyRoutes);      // Backward-compatible alias
+router.use('/admin/invi-remote', posRemoteImportRoutes);  // Admin API: Invi Remote Importer Engine & Staging
+router.use('/admin/pos-remote', posRemoteImportRoutes);  // Backward-compatible alias
+
 
 router.get('/admin/catalog/integrity', authenticate, authorize('ADMIN', 'SUPER_ADMIN'), async (_req, res, next) => {
   try {

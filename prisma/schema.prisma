@@ -143,6 +143,7 @@ model Product {
   downsellCategoryIds String?          @db.LongText
   upsellCategoryIds   String?          @db.LongText
   externalId          String?          @unique
+  inviId              String?          @unique
   seoData             String?          @db.LongText
   averageRating       Float            @default(0)
   ratingCount         Int              @default(0)
@@ -168,6 +169,7 @@ model Product {
   wishlist            Wishlist[]
   categories          Category[]       @relation("CategoryToProduct")
   tags                Tag[]            @relation("ProductToTag")
+  inventoryLogs       InventoryLog[]
 
   @@index([slug])
   @@index([brandId])
@@ -219,6 +221,7 @@ model ProductVariant {
   specialPriceEnd   DateTime?
   specialPriceStart DateTime?
   externalId        String?            @unique
+  inviId            String?            @unique
 
   length            String?
   width             String?
@@ -234,6 +237,7 @@ model ProductVariant {
   orderItems        OrderItem[]
   product           Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   attributes        VariantAttribute[]
+  inventoryLogs     InventoryLog[]
 
   @@index([productId])
   @@index([sku])
@@ -940,30 +944,78 @@ model ShopifySetting {
   @@map("shopify_setting")
 }
 
-enum ApiKeyStatus {
-  ACTIVE
-  INACTIVE
-  REVOKED
-}
-
 model ApiKey {
-  id             String       @id @default(cuid())
-  name           String
-  consumerKey    String       @unique
+  id            String    @id @default(cuid())
+  name          String
+  allowedDomain String    @default("*")
+  authMode      String    @default("SINGLE_KEY") // "SINGLE_KEY" or "DUAL_KEY"
+  consumerKey   String    @unique
   consumerSecret String?
-  status         ApiKeyStatus @default(ACTIVE)
-  allowedDomain  String?      @default("*")
-  authMode       String       @default("SINGLE_KEY") // "SINGLE_KEY" or "DUAL_KEY"
-  permissions    String       @default("all")
-  webhookUrl     String?
-  webhookSecret  String?
-  lastUsedAt     DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  secretHash    String?
+  webhookUrl    String?
+  webhookSecret String?
+  status        String    @default("ACTIVE") // ACTIVE, INACTIVE, REVOKED
+  permissions   String    @default("all")
+  lastUsedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([consumerKey])
-  @@index([status])
   @@map("apikey")
+}
+
+model InventoryLog {
+  id            String   @id @default(cuid())
+  productId     String
+  variantId     String?
+  sku           String
+  previousStock Int
+  newStock      Int
+  delta         Int
+  source        String // "WEB_ORDER", "POS_DELTA", "POS_ABSOLUTE", "ADMIN_MANUAL", "ORDER_CANCEL", "RETURN"
+  referenceId   String? // Order ID or POS Sync Batch ID
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([sku])
+  @@index([productId])
+  @@index([variantId])
+  @@index([createdAt])
+  @@map("inventory_log")
+}
+
+model PosEvent {
+  id        String   @id @default(cuid())
+  eventType String // "inventory.updated", "order.created", "product.updated"
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("pos_event")
+}
+
+model PosRemoteConfig {
+  id              String    @id @default(cuid())
+  name            String
+  targetUrl       String
+  authType        String    @default("QUERY_PARAM") // QUERY_PARAM, HEADER, BASIC_AUTH, BEARER_TOKEN
+  keyParamName    String    @default("consumer_key")
+  secretParamName String    @default("consumer_secret")
+  apiKey          String
+  secretKey       String
+  productsRoute   String    @default("/wp-json/wc/v3/products")
+  categoriesRoute String    @default("/wp-json/wc/v3/products/categories")
+  brandsRoute     String    @default("/wp-json/wc/v3/products/brands")
+  ordersRoute     String    @default("/wp-json/wc/v3/orders")
+  categoryMapping Json?
+  lastSyncAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("pos_remote_config")
 }
 
 model InviSyncLog {
@@ -982,4 +1034,5 @@ model InviSyncLog {
   @@index([createdAt])
   @@map("invisynclog")
 }
+
 

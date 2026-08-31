@@ -1,5 +1,6 @@
 import { redis } from './RedisManager';
 import logger from '../../utils/logger';
+import { KeyFactory } from './KeyFactory';
 
 // In-Memory cache map (L1) with TTL support - operates seamlessly even if Redis is disabled or offline
 const memoryCache = new Map<string, { value: any; expiry: number }>();
@@ -38,6 +39,98 @@ export const CacheService = {
     } catch (error) {
       logger.error('Cache FLUSHDB Error:', error);
     }
+  },
+
+  /**
+   * Delete all keys matching a prefix/pattern from both L1 memory cache and Redis.
+   */
+  async deletePattern(pattern: string): Promise<void> {
+    // 1. Delete from memory cache
+    const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    for (const key of memoryCache.keys()) {
+      if (regexPattern.test(key)) {
+        memoryCache.delete(key);
+      }
+    }
+
+    // 2. Delete from Redis
+    if (process.env.REDIS_ENABLED === 'false' || redis?.status !== 'ready') return;
+
+    try {
+      const keys = await redis.keys(pattern);
+      if (keys && keys.length > 0) {
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < keys.length; i += CHUNK_SIZE) {
+          const chunk = keys.slice(i, i + CHUNK_SIZE);
+          await redis.del(...chunk);
+        }
+      }
+    } catch (error) {
+      logger.error(`Cache deletePattern Error for ${pattern}:`, error);
+    }
+  },
+
+  /**
+   * Invalidate product cache:
+   * 1. Purges L1 in-memory product entries
+   * 2. Bumps product version timestamp
+   * 3. Deletes all femcart:products:* keys from Redis
+   */
+  async invalidateProducts(): Promise<void> {
+    try {
+      const newVersion = Date.now();
+      await this.set(KeyFactory.productCacheVersion(), newVersion, 86400 * 30);
+      await this.deletePattern('femcart:products:*');
+      memoryCache.clear();
+    } catch (error) {
+      logger.error('Error in invalidateProducts:', error);
+    }
+  },
+
+  /**
+   * Invalidate category cache:
+   * 1. Purges L1 in-memory category entries
+   * 2. Bumps category version timestamp
+   * 3. Deletes all femcart:categories:* and femcart:category:* keys from Redis
+   */
+  async invalidateCategories(): Promise<void> {
+    try {
+      const newVersion = Date.now();
+      await this.set(KeyFactory.categoryCacheVersion(), newVersion, 86400 * 30);
+      await this.deletePattern('femcart:categories:*');
+      await this.deletePattern('femcart:category:*');
+      memoryCache.clear();
+    } catch (error) {
+      logger.error('Error in invalidateCategories:', error);
+    }
+  },
+
+  /**
+   * Invalidate brand cache:
+   * 1. Purges L1 in-memory brand entries
+   * 2. Bumps brand version timestamp
+   * 3. Deletes all femcart:brands:* keys from Redis
+   */
+  async invalidateBrands(): Promise<void> {
+    try {
+      const newVersion = Date.now();
+      await this.set(KeyFactory.brandCacheVersion(), newVersion, 86400 * 30);
+      await this.deletePattern('femcart:brands:*');
+      memoryCache.clear();
+    } catch (error) {
+      logger.error('Error in invalidateBrands:', error);
+    }
+  },
+
+  /**
+   * Invalidate entire catalog (products, categories, brands)
+   */
+  async invalidateAllCatalog(): Promise<void> {
+    await Promise.all([
+      this.invalidateProducts(),
+      this.invalidateCategories(),
+      this.invalidateBrands(),
+    ]);
   },
 
   /**

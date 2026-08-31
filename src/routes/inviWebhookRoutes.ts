@@ -1,158 +1,94 @@
 import { Router, Request, Response } from 'express';
-import crypto from 'crypto';
-import prisma from '../config/database';
-import { posService } from '../services/posService';
+import { InviWebhookService } from '../services/inviWebhookService';
+import { getSetting, getSettingBool } from '../utils/settings';
+import logger from '../utils/logger';
 
 const router = Router();
 
-// HMAC-SHA256 Signature Verifier
-function verifyHmac(payload: Buffer | string, signature: string, secret: string): boolean {
-  if (!signature || !secret) return false;
-  try {
-    const hmac = crypto.createHmac('sha256', secret);
-    const digest = hmac.update(payload).digest('hex');
-    const digestBuf = Buffer.from(digest, 'hex');
-    const sigBuf = Buffer.from(signature, 'hex');
+/**
+ * Health check & supported events diagnostic for INVI POS
+ */
+router.get(['/', '/webhook'], async (_req: Request, res: Response) => {
+  const isMasterEnabled = await getSettingBool('invi_master_enabled', true);
+  const isWebhookEnabled = await getSettingBool('invi_webhook_enabled', true);
 
-    if (digestBuf.length !== sigBuf.length) {
-      return false;
-    }
-    return crypto.timingSafeEqual(digestBuf, sigBuf);
-  } catch {
-    return false;
-  }
-}
-
-// Health check
-router.get(['/', '/webhook'], (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'ok',
     service: 'INVI POS Webhook Receiver',
+    masterEnabled: isMasterEnabled,
+    webhookEnabled: isWebhookEnabled,
     supportedEvents: [
       'stock.changed',
       'inventory.updated',
+      'product.stock_updated',
+      'stock.batch_update',
+      'inventory.bulk_sync',
       'order.status.changed',
       'order.status_updated',
+      'order.shipped',
+      'order.delivered',
+      'order.cancelled',
+      'order.returned',
+      'order.created',
       'order.sell_created',
       'product.created',
-      'product.updated'
+      'product.updated',
+      'product.price_changed',
+      'product.deleted'
     ],
     timestamp: new Date().toISOString()
   });
 });
 
-// Webhook Receiver Endpoint
-router.post(['/', '/webhook'], async (req: any, res: Response) => {
-  const startTime = Date.now();
-  let syncStatus = 'SUCCESS';
-  let errorMessage: string | null = null;
-
+/**
+ * Public Webhook Receiver for INVI POS Server-to-Server Events
+ * Header: x-invi-signature (HMAC-SHA256 of raw body with DB invi_webhook_secret)
+ */
+router.post(['/', '/webhook'], async (req: Request, res: Response) => {
   try {
-    const signature = req.headers['x-invi-signature'] as string;
-    const secret = process.env.INVI_WEBHOOK_SECRET || '';
+    const isMasterEnabled = await getSettingBool('invi_master_enabled', true);
+    if (!isMasterEnabled) {
+      return res.status(403).json({
+        success: false,
+        error: 'INVI POS Integration is globally disabled.'
+      });
+    }
 
-    // Verify HMAC if secret is configured
-    if (secret && signature) {
-      const payloadToVerify = req.rawBody || JSON.stringify(req.body);
-      const isValid = verifyHmac(payloadToVerify, signature, secret);
+    const isWebhookEnabled = await getSettingBool('invi_webhook_enabled', true);
+    if (!isWebhookEnabled) {
+      return res.status(403).json({
+        success: false,
+        error: 'INVI Webhook Receiver is disabled in admin settings.'
+      });
+    }
+
+    // Dynamic Secret from Database Settings
+    const configuredSecret = await getSetting('invi_webhook_secret', process.env.INVI_WEBHOOK_SECRET || 'femcart_invi_webhook_secret_2026');
+    const signature = (req.headers['x-invi-signature'] || req.headers['x-signature']) as string;
+
+    const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+
+    if (configuredSecret && signature) {
+      const isValid = InviWebhookService.verifySignature(rawBody, signature, configuredSecret);
       if (!isValid) {
-        return res.status(401).json({ success: false, error: 'Invalid HMAC signature' });
+        logger.warn('[InviWebhook] Invalid HMAC signature received', { signature });
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid webhook signature.'
+        });
       }
     }
 
-    const { event, data } = req.body;
-    if (!event || !data) {
-      return res.status(400).json({ success: false, error: 'Event and data required' });
-    }
+    const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const result = await InviWebhookService.handleWebhookEvent(payload);
 
-    // Process Invi Events
-    switch (event) {
-      case 'stock.changed':
-      case 'inventory.updated': {
-        const { sku, stock, id } = data;
-        const target = sku || id;
-        if (target && stock !== undefined) {
-          const stockVal = Math.max(0, parseInt(String(stock), 10));
-          await posService.updateStock(String(target), stockVal);
-        }
-        break;
-      }
-
-      case 'order.status.changed':
-      case 'order.status_updated': {
-        const { id, order_id, status } = data;
-        const targetId = id || order_id;
-        if (targetId && status) {
-          await posService.updateOrderStatus(String(targetId), {
-            status: String(status).toUpperCase(),
-            notes: 'Status updated via Invi POS webhook'
-          });
-        }
-        break;
-      }
-
-      case 'order.sell_created': {
-        // Counter sales at POS - atomically decrement e-commerce inventory
-        const items = data.items || [];
-        for (const item of items) {
-          const sku = item.sku || item.id;
-          const qty = parseInt(String(item.qty || item.quantity || 1), 10);
-          if (!sku || qty <= 0) continue;
-
-          await prisma.$transaction(async (tx: any) => {
-            const variant = await tx.productVariant.findFirst({ where: { sku } });
-            if (variant) {
-              const newVarStock = Math.max(0, variant.stock - qty);
-              await tx.productVariant.update({
-                where: { id: variant.id },
-                data: { stock: newVarStock }
-              });
-
-              // Recalculate parent product stock
-              const siblings = await tx.productVariant.findMany({
-                where: { productId: variant.productId },
-                select: { stock: true }
-              });
-              const aggStock = siblings.reduce((acc: number, s: any) => acc + s.stock, 0);
-              await tx.product.update({
-                where: { id: variant.productId },
-                data: { stock: aggStock }
-              });
-            } else {
-              const product = await tx.product.findFirst({
-                where: { OR: [{ sku }, { id: sku }] }
-              });
-              if (product) {
-                const newStock = Math.max(0, product.stock - qty);
-                await tx.product.update({
-                  where: { id: product.id },
-                  data: { stock: newStock }
-                });
-              }
-            }
-          });
-        }
-        break;
-      }
-    }
-
-    res.status(200).json({ success: true, message: `Event '${event}' processed successfully.` });
-  } catch (err: any) {
-    syncStatus = 'FAILED';
-    errorMessage = err.message || 'Webhook processing failed';
-    res.status(500).json({ success: false, error: errorMessage });
-  } finally {
-    // Record webhook event telemetry
-    prisma.inviSyncLog.create({
-      data: {
-        type: 'WEBHOOK',
-        status: syncStatus,
-        itemsCount: 1,
-        requestBody: req.body,
-        errorMessage,
-        durationMs: Date.now() - startTime
-      }
-    }).catch(() => {});
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error: any) {
+    logger.error('[InviWebhook] Error processing webhook:', error);
+    return res.status(500).json({
+      success: false,
+      error: error?.message || 'Internal server error processing webhook.'
+    });
   }
 });
 
